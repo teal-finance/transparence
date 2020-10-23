@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 )
 
@@ -131,4 +133,119 @@ func moveGoalpostsInf(t1, t2 time.Time, b1 int64) int64 {
 func moveGoalpostsSup(t1, t2 time.Time, b2 int64) int64 {
 	numberOfBlocks := (t2.Unix() - t1.Unix()) / (10 * 60 * safeStep)
 	return b2 - numberOfBlocks
+}
+
+// ExtractVout extract the list of addresses involved.
+// The Tx hash should be taken care of by the caller of this function
+// No call to rpc so o need to return an error
+func (c *BtcClient) ExtractVout(vouts []btcjson.Vout) []string {
+	addresses := make([]string, 0)
+	if vouts == nil {
+		return addresses
+	}
+	for _, vout := range vouts {
+		addresses = append(addresses, vout.ScriptPubKey.Addresses...)
+	}
+	return addresses
+}
+
+// ExtractVin extract the list of addresses involved.
+// The Tx hash should be taken care of by the caller of this function
+// we also need to think of the coinbase tx that is the first tx, vin & vout, in each block
+func (c *BtcClient) ExtractVin(vins []btcjson.Vin, TxHash string) ([]string, error) {
+	addresses := make([]string, 0)
+	if vins == nil {
+		return addresses, nil
+	}
+	for _, vin := range vins {
+		// the easy way to get the address in Vin is to look at Vout
+		//TODO just do the conversion to PubKey instead because it messed coinbase tx
+
+		//watchout for coinbase transactions
+		//This is not working for coinbase tx and transfers from coinbase tx
+		if vin.IsCoinBase() {
+			hash, err := chainhash.NewHashFromStr(TxHash)
+			if err != nil {
+				return []string{}, err
+			}
+			transaction, err := c.RPC.GetRawTransactionVerbose(hash)
+			if err != nil {
+				return []string{}, err
+			}
+			addresses = append(addresses, transaction.Vout[0].ScriptPubKey.Addresses...)
+			continue
+		}
+		hash, err := chainhash.NewHashFromStr(vin.Txid)
+		if err != nil {
+			return []string{}, err
+		}
+		transaction, err := c.RPC.GetRawTransactionVerbose(hash)
+		if err != nil {
+			return []string{}, err
+		}
+		addresses = append(addresses, transaction.Vout[vin.Vout].ScriptPubKey.Addresses...)
+	}
+	return addresses, nil
+}
+
+// ExtractAddresses an array of the addresses present in the block. the index follow the tx indexes in the block
+func (c *BtcClient) ExtractAddresses(block int64) ([][]string, error) {
+	transactions, erros := c.GetBlockTxHash(block)
+	if erros != nil {
+		return [][]string{}, erros
+	}
+	addresses := make([][]string, 0)
+	if transactions == nil {
+		return addresses, nil
+	}
+	for _, tx := range transactions {
+		hash, er := chainhash.NewHashFromStr(tx)
+		if er != nil {
+			return [][]string{}, er
+		}
+		transactionVerbose, erra := c.RPC.GetRawTransactionVerbose(hash)
+		if erra != nil {
+			return [][]string{}, erra
+		}
+
+		addressesVinVout, err := c.ExtractVin(transactionVerbose.Vin, transactionVerbose.Hash)
+		if err != nil {
+			return [][]string{}, err
+		}
+		addressesVinVout = append(addressesVinVout, c.ExtractVout(transactionVerbose.Vout)...)
+		addresses = append(addresses, [][]string{addressesVinVout}...)
+	}
+
+	return addresses, nil
+}
+
+//Transparence shows the tx involving around a timestamp
+func (c *BtcClient) Transparence(t time.Time, userAddress string) error {
+	start, end, err := c.GetRangeFromTimesTamp(t)
+	if err != nil {
+		return err
+	}
+	for i := start; i <= end; i++ {
+		blockTx, err := c.GetBlockTxHash(i)
+		if err != nil {
+			return err
+		}
+		addresses, err := c.ExtractAddresses(i)
+		if err != nil {
+			return err
+		}
+		for index, txAddresses := range addresses {
+			if txAddresses != nil {
+				for _, address := range txAddresses {
+					if userAddress == address {
+						fmt.Println(blockTx[index])
+					}
+				}
+
+			}
+		}
+
+	}
+
+	return nil
 }
