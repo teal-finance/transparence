@@ -4,10 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"encoding/hex"
 
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/chaincfg"
+
 )
 
 // BtcClient ...
@@ -149,6 +153,35 @@ func (c *BtcClient) ExtractVout(vouts []btcjson.Vout) []string {
 	return addresses
 }
 
+// ExtractVin2 extract the list of addresses involved.
+// The Tx hash should be taken care of by the caller of this function
+// we also need to think of the coinbase tx that is the first tx, vin & vout, in each block
+func (c *BtcClient) ExtractVin2(vins []btcjson.Vin) ([]string, error) {
+	addresses := make([]string, 0)
+	if vins == nil {
+		return addresses, nil
+	}
+
+	for _, vin := range vins {
+		script, err := hex.DecodeString(vin.ScriptSig.Hex)
+		if err != nil {
+			fmt.Println(err)
+			return addresses,err
+		}
+		_, addrs, _, err := txscript.ExtractPkScriptAddrs(
+			script, &chaincfg.MainNetParams)
+		if err != nil {
+			fmt.Println(err)
+			return addresses,err
+		}
+		for _, addr := range addrs {
+			addresses = append(addresses,addr.EncodeAddress())
+		}
+	}
+	return addresses,nil
+
+}
+
 // ExtractVin extract the list of addresses involved.
 // The Tx hash should be taken care of by the caller of this function
 // we also need to think of the coinbase tx that is the first tx, vin & vout, in each block
@@ -164,6 +197,7 @@ func (c *BtcClient) ExtractVin(vins []btcjson.Vin, TxHash string) ([]string, err
 		//watchout for coinbase transactions
 		//This is not working for coinbase tx and transfers from coinbase tx
 		if vin.IsCoinBase() {
+			/*
 			hash, err := chainhash.NewHashFromStr(TxHash)
 			if err != nil {
 				return []string{}, err
@@ -173,6 +207,7 @@ func (c *BtcClient) ExtractVin(vins []btcjson.Vin, TxHash string) ([]string, err
 				return []string{}, err
 			}
 			addresses = append(addresses, transaction.Vout[0].ScriptPubKey.Addresses...)
+			*/
 			continue
 		}
 		hash, err := chainhash.NewHashFromStr(vin.Txid)
