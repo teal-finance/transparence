@@ -20,7 +20,7 @@ import (
 )
 
 const CONFIG_FILE = "../../conf/config.json"
-const INFURA_KEY="aefe8d98c6fd40adb30edab0e0954557"
+const INFURA_KEY=""
 const IP_API_INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_COINGECKO = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin"
 const IP_API_BINANCECHAIN = "wss://bsc-ws-node.nariox.org:443"
