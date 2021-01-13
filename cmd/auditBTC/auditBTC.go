@@ -14,12 +14,12 @@ import (
 
     "github.com/ethereum/go-ethereum/accounts/abi/bind"
     "github.com/ethereum/go-ethereum/common"
-    "github.com/ethereum/go-ethereum/ethclient"   
+    "github.com/ethereum/go-ethereum/ethclient"
 
     "transparence/pkg/token"   // for ERC20 request (package generated using smart contract ABI)
 )
 
-const CONFIG_FILE = "../../conf/config.json"
+const CONFIG_FILE = "config.json"
 const INFURA_KEY=""
 const IP_API_INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_COINGECKO = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin"
@@ -29,7 +29,7 @@ const ETH_STRING = "Ethereum"
 const BINANCE_STRING = "BinanceChain"
 
 
-// Types used to represent the tokens of the JSON config file 
+// Types used to represent the tokens of the JSON config file
 type Token struct {
     BLOCKCHAIN_PLATFORM string `json:"BLOCKCHAIN_PLATFORM"`
     SYMBOL string `json:"SYMBOL"`
@@ -64,12 +64,12 @@ func main() {
     fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 & Binance chain BEP20 BTC ################## \n\n")
     totalOverall := totalOnEth.Add(totalOnEth,totalOnBinance)
     printBitcoinComparison(totalOverall,"Ethereum & Binance chain")
-    
+
 }
 
 func analyze(ipAddress string, blockchainPlatform string) (*big.Float){
     total := big.NewFloat(0)
-    
+
     tokens := readConfigFile(CONFIG_FILE)
     client, err := ethclient.Dial(ipAddress)
     if err != nil {
@@ -131,7 +131,7 @@ func httpRequest(address string) ([]byte) {
     body, err := ioutil.ReadAll(resp.Body)
     if err != nil {
       log.Fatalln(err)
-    }   
+    }
     return body
 }
 
@@ -204,7 +204,7 @@ func verif(supplyOnBitcoin *big.Float, supplyOnToken *big.Float) (string){
 //     bal, err := instance.BalanceOf(&bind.CallOpts{}, address)
 //     if err != nil {
 //         log.Fatal(err)
-//     }    
+//     }
 //     fmt.Printf("BalanceOf: %s\n", bal)
 //     return bal
 // }

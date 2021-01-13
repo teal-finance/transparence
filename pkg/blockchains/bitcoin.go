@@ -157,23 +157,35 @@ func (c *BtcClient) ExtractVout(vouts []btcjson.Vout) []string {
 // The Tx hash should be taken care of by the caller of this function
 // we also need to think of the coinbase tx that is the first tx, vin & vout, in each block
 func (c *BtcClient) ExtractVin2(vins []btcjson.Vin) ([]string, error) {
+	fmt.Println("vins ",vins)
 	addresses := make([]string, 0)
 	if vins == nil {
 		return addresses, nil
 	}
 
 	for _, vin := range vins {
+		//coinbase vin
+		//fairly sure I can return now as thre won't be a coinbase with other vins
+		if vin.ScriptSig == nil {
+			continue
+		}
+		fmt.Println("scriptsig ",vin.ScriptSig)
+		fmt.Println("scriptsig hex",vin.ScriptSig.Hex)
 		script, err := hex.DecodeString(vin.ScriptSig.Hex)
 		if err != nil {
 			fmt.Println(err)
 			return addresses,err
 		}
+		fmt.Println("script ",script)
+		// ExtractPkScriptAddrs only works with *standard* format
+		// Is it a problem? ;-)
 		_, addrs, _, err := txscript.ExtractPkScriptAddrs(
 			script, &chaincfg.MainNetParams)
 		if err != nil {
 			fmt.Println(err)
 			return addresses,err
 		}
+		fmt.Println("addrs ",addrs)
 		for _, addr := range addrs {
 			addresses = append(addresses,addr.EncodeAddress())
 		}

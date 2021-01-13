@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"transparence/pkg/keeper"
+	"transparence/pkg/blockchains"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -15,9 +15,10 @@ import (
 )
 
 //Tx test
+const Tx = "5b958a8a200885779164562f94479d221dedeaae726c1d5744083d1ad16acd6e"//285e526be1b6392e8413e3e1594cf3f5c99c17ac20609e08223a446888e9e9c1"
 //const Tx = "5574d698df9f0797dc7d558202137aef3d66ea8acea5777db11b55a97ad2f7e6" //"98b3bbd1cbe162f2b1bb1bbf71851f3162ea03b9a04838984565d148607a4ebc"
 //const Tx = "2af596348e8b529a5f910d938b6b1f190a1ff5d9b6e3a77cdb7a03ef7d6f2052"
-const Tx = "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4" //2010 tx to test when reindex
+//const Tx = "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4" //2010 tx to test when reindex
 //const Tx = "f5ae2ad8095c4a347adef38e7299a74df42099df2656d2f9af07f9cabb4fe24c" //2016 tx to test when reindex
 //const Tx = "70364f6ef4fffec226a62f6ee7643669ac1364f203a60363e653340c2148c0f7" //coinbase example
 //const Tx = "cea0dd0097e9e3afc63ddacba9496f8b19a35edd54e2bbabfa03673346cc4d30" //mint example
@@ -78,11 +79,13 @@ func main() {
 	}
 	fmt.Println("vin ", transactionVerbose.Vin)
 	fmt.Println("vout ", transactionVerbose.Vout)
+	a:=transactionVerbose.Vin[0]
+	fmt.Println("prevout:",a)
 	//_ = transactionVerbose
 	//fmt.Println("Raw verbose Tx", transactionVerbose)
-
-	fmt.Println(client.ExtractVin2(transactionVerbose.Vin))
-	fmt.Println(client.ExtractVout(transactionVerbose.Vout))
+	c,_:= client.ExtractVin2(transactionVerbose.Vin)
+	fmt.Println("vin pk:",c)
+	fmt.Println("vout pk", client.ExtractVout(transactionVerbose.Vout))
 
 	blockHash, erra := client.RPC.GetBlockHash(Block)
 	if erra != nil {
