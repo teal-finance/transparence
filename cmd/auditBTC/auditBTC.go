@@ -3,6 +3,7 @@ package main
 import (
     "encoding/json"
     "os"
+    "flag"
 
     "io/ioutil"
     "net/http"
@@ -55,15 +56,18 @@ type CoinsMarketItem struct {
 type CoinsMarket []CoinsMarketItem
 
 func main() {
-    fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 BTC ################## \n\n")
-    totalOnEth := analyze(IP_API_INFURA, ETH_STRING)
+  rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
 
-    fmt.Printf("\n\n ################## Analysis of Binance chain BEP20 BTC ################## \n\n")
-    totalOnBinance := analyze(IP_API_BINANCECHAIN, BINANCE_STRING)
+  flag.Parse()
+  fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 BTC ################## \n\n")
+  totalOnEth := analyze(*rpcURL, ETH_STRING)
 
-    fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 & Binance chain BEP20 BTC ################## \n\n")
-    totalOverall := totalOnEth.Add(totalOnEth,totalOnBinance)
-    printBitcoinComparison(totalOverall,"Ethereum & Binance chain")
+  fmt.Printf("\n\n ################## Analysis of Binance chain BEP20 BTC ################## \n\n")
+  totalOnBinance := analyze(IP_API_BINANCECHAIN, BINANCE_STRING)
+
+  fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 & Binance chain BEP20 BTC ################## \n\n")
+  totalOverall := totalOnEth.Add(totalOnEth,totalOnBinance)
+  printBitcoinComparison(totalOverall,"Ethereum & Binance chain")
 
 }
 
