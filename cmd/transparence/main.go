@@ -6,9 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"transparence/pkg/blockchains"
-
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"transparence/pkg/blockchains/bitcoin"
 )
 
 //Tx test
@@ -28,6 +26,8 @@ const Tx = "cea0dd0097e9e3afc63ddacba9496f8b19a35edd54e2bbabfa03673346cc4d30" //
 //const timestamp int64 = 1602685676
 const Block int64 = 653897 //demo block
 
+const BinanceBTC = "3LYJfcfHPXYJreMsASk2jkn69LWEYKzexb"
+
 // main
 func main() {
 	rpcURL := flag.String("r", "127.0.0.1:8332", "rpc url:port ")
@@ -39,20 +39,18 @@ func main() {
 	pass := strings.Split(*userpass, ":")[1]
 	client, _ := bitcoin.New(*rpcURL, user, pass)
 
-	trans, er := chainhash.NewHashFromStr(Tx)
-	if er != nil {
-		log.Fatal(er, " bad  tx hash")
-	}
-	fmt.Println("Tx", trans)
+	futur := client.ImportAddressRescan(BinanceBTC, "binancebtc", false)
+	fmt.Println(client.RPC.GetBalances())
+	fmt.Println(client.RPC.GetBalance("binancebtc"))
 
-	transactionVerbose, erra := client.RPC.GetRawTransactionVerbose(trans)
-	if erra != nil {
-		log.Fatal(erra, "bad raw verbose tx format")
-	}
+	fmt.Println(futur)
+	fmt.Println(futur.Receive())
 
-	c,_:= client.ExtractVin(transactionVerbose.Vin)
-	fmt.Println("vins pk:",c)
-	fmt.Println("vouts pk", client.ExtractVout(transactionVerbose.Vout))
+	addresses, err := client.ExtractAddressesFromTx(Tx)
+	if err != nil {
+		log.Fatal(err, " something somtheing wrong")
+	}
+	fmt.Println("Adresses: \n", addresses)
 
 	blockHash, erra := client.RPC.GetBlockHash(Block)
 	if erra != nil {
@@ -75,14 +73,4 @@ func main() {
 
 	}
 	_ = Tx
-
-	//fmt.Println("Block  Verbose Txs", Tx)
-	/*
-		blockTime := time.Unix(blockHeader.Timestamp.Unix(), 0)
-		fmt.Println("block number ", Block)
-		fmt.Print("range computed ")
-		fmt.Println(client.GetRangeFromTimesTamp(blockTime))
-	*/
-	//fmt.Println(client.ExtractAddresses(Block))
-
 }
