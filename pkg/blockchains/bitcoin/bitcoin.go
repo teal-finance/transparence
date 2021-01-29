@@ -1,4 +1,4 @@
-package keeper
+package bitcoin
 
 import (
 	"errors"
@@ -141,85 +141,37 @@ func moveGoalpostsSup(t1, t2 time.Time, b2 int64) int64 {
 
 // ExtractVout extract the list of addresses involved.
 // The Tx hash should be taken care of by the caller of this function
-// No call to rpc so o need to return an error
-func (c *BtcClient) ExtractVout(vouts []btcjson.Vout) []string {
+// No call to rpc so  error just to have the same signature as ExtractVin
+func (c *BtcClient) ExtractVout(vouts []btcjson.Vout) ([]string, error) {
 	addresses := make([]string, 0)
 	if vouts == nil {
-		return addresses
+		return addresses,nil
 	}
 	for _, vout := range vouts {
 		addresses = append(addresses, vout.ScriptPubKey.Addresses...)
 	}
-	return addresses
-}
-
-// ExtractVin2 extract the list of addresses involved.
-// The Tx hash should be taken care of by the caller of this function
-// we also need to think of the coinbase tx that is the first tx, vin & vout, in each block
-func (c *BtcClient) ExtractVin2(vins []btcjson.Vin) ([]string, error) {
-	fmt.Println("vins ",vins)
-	addresses := make([]string, 0)
-	if vins == nil {
-		return addresses, nil
-	}
-
-	for _, vin := range vins {
-		//coinbase vin
-		//fairly sure I can return now as thre won't be a coinbase with other vins
-		if vin.ScriptSig == nil {
-			continue
-		}
-		fmt.Println("scriptsig ",vin.ScriptSig)
-		fmt.Println("scriptsig hex",vin.ScriptSig.Hex)
-		script, err := hex.DecodeString(vin.ScriptSig.Hex)
-		if err != nil {
-			fmt.Println(err)
-			return addresses,err
-		}
-		fmt.Println("script ",script)
-		// ExtractPkScriptAddrs only works with *standard* format
-		// Is it a problem? ;-)
-		_, addrs, _, err := txscript.ExtractPkScriptAddrs(
-			script, &chaincfg.MainNetParams)
-		if err != nil {
-			fmt.Println(err)
-			return addresses,err
-		}
-		fmt.Println("addrs ",addrs)
-		for _, addr := range addrs {
-			addresses = append(addresses,addr.EncodeAddress())
-		}
-	}
 	return addresses,nil
-
 }
 
 // ExtractVin extract the list of addresses involved.
 // The Tx hash should be taken care of by the caller of this function
 // we also need to think of the coinbase tx that is the first tx, vin & vout, in each block
-func (c *BtcClient) ExtractVin(vins []btcjson.Vin, TxHash string) ([]string, error) {
+// inspiration mainly comes from: https://github.com/btcsuite/btcd/blob/master/rpcserver.go
+// and I am too tired to explain how it works.
+func (c *BtcClient) ExtractVin(vins []btcjson.Vin) ([]string, error) {
 	addresses := make([]string, 0)
+	//this should never happen actually
 	if vins == nil {
 		return addresses, nil
 	}
 	for _, vin := range vins {
 		// the easy way to get the address in Vin is to look at Vout
-		//TODO just do the conversion to PubKey instead because it messed coinbase tx
 
 		//watchout for coinbase transactions
-		//This is not working for coinbase tx and transfers from coinbase tx
+		// because they don't have TxId and only have coinbase field :-(
 		if vin.IsCoinBase() {
-			/*
-			hash, err := chainhash.NewHashFromStr(TxHash)
-			if err != nil {
-				return []string{}, err
-			}
-			transaction, err := c.RPC.GetRawTransactionVerbose(hash)
-			if err != nil {
-				return []string{}, err
-			}
-			addresses = append(addresses, transaction.Vout[0].ScriptPubKey.Addresses...)
-			*/
+			//pretty sure we can return here but might be some weird blocks
+			//with weird coinbase tx
 			continue
 		}
 		hash, err := chainhash.NewHashFromStr(vin.Txid)
@@ -230,11 +182,61 @@ func (c *BtcClient) ExtractVin(vins []btcjson.Vin, TxHash string) ([]string, err
 		if err != nil {
 			return []string{}, err
 		}
-		addresses = append(addresses, transaction.Vout[vin.Vout].ScriptPubKey.Addresses...)
+		tx:=transaction.Vout[vin.Vout]
+		scriptHex := tx.ScriptPubKey.Hex
+		script, err := hex.DecodeString(scriptHex)
+		if err != nil {
+			fmt.Println(err)
+			return []string{}, err
+		}
+
+		_, addrs, _, err := txscript.ExtractPkScriptAddrs(
+			script, &chaincfg.MainNetParams)
+		if err != nil {
+			fmt.Println(err)
+			return []string{}, err
+		}
+		for _, addr := range addrs {
+			addresses = append(addresses, addr.EncodeAddress())
+		}
 	}
 	return addresses, nil
 }
 
+// ExtractAddressesFromTx an array of the addresses present in the Tx
+// vin (inputs) and vout (outputs)
+func (c *BtcClient) ExtractAddressesFromTx(txHash string) ([]string, error) {
+	addresses := make([]string, 0)
+	tx, er := chainhash.NewHashFromStr(txHash)
+	if er != nil {
+		return addresses, er
+	}
+
+	transactionVerbose, erra := c.RPC.GetRawTransactionVerbose(tx)
+	if erra != nil {
+		return addresses, erra
+	}
+
+	vins,erro:=c.ExtractVin(transactionVerbose.Vin)
+	if erro != nil {
+		return addresses, erro
+	}
+	vouts,err:=c.ExtractVout(transactionVerbose.Vout)
+	if err != nil {
+		return addresses, err
+	}
+	addresses = append(addresses,vins...)
+	addresses = append(addresses,vouts...)
+
+	return addresses, nil
+}
+
+// ImportAddressRescan adds address to be watched in the client
+func (c *BtcClient) ImportAddressRescan(address string, account string, rescan bool) rpcclient.FutureImportAddressResult{
+	return c.RPC.ImportAddressRescanAsync(address,account,rescan)
+}
+
+/*
 // ExtractAddresses an array of the addresses present in the block. the index follow the tx indexes in the block
 func (c *BtcClient) ExtractAddresses(block int64) ([][]string, error) {
 	transactions, erros := c.GetBlockTxHash(block)
@@ -255,17 +257,18 @@ func (c *BtcClient) ExtractAddresses(block int64) ([][]string, error) {
 			return [][]string{}, erra
 		}
 
-		addressesVinVout, err := c.ExtractVin(transactionVerbose.Vin, transactionVerbose.Hash)
+		addressesVinVout, err := c.ExtractVin(transactionVerbose.Vin)
 		if err != nil {
 			return [][]string{}, err
 		}
-		addressesVinVout = append(addressesVinVout, c.ExtractVout(transactionVerbose.Vout)...)
+		//addressesVinVout = append(addressesVinVout, c.ExtractVout(transactionVerbose.Vout)...)
 		addresses = append(addresses, [][]string{addressesVinVout}...)
 	}
 
 	return addresses, nil
-}
+}*/
 
+/*
 //Transparence shows the tx involving around a timestamp
 func (c *BtcClient) Transparence(t time.Time, userAddress string) error {
 	start, end, err := c.GetRangeFromTimesTamp(t)
@@ -295,4 +298,4 @@ func (c *BtcClient) Transparence(t time.Time, userAddress string) error {
 	}
 
 	return nil
-}
+}*/
