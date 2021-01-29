@@ -17,28 +17,40 @@ import (
      "transparence/pkg/comptroller"
 )
 
+// CreamFinance Ethereum requirementes
 const INFURA_KEY=""
 const IP_API_INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
-const CONTRACT_TO_EXCLUDE = "0xBdf447B39D152d6A234B4c02772B8ab5D1783F72"
-const COMPTROLLER_CONTRACT_ADDRESS = "0x3d5BC3c8d13dcB8bF317092d84783c2697AE9258"
-// WETH CONTRACT ADDRESS AND CONTRACT_TO_EXCLUDE are specific because smart contract does not contain same function than others crTokens
+const COMPTROLLER_CONTRACT_ADDRESS_ETHEREUM = "0x3d5BC3c8d13dcB8bF317092d84783c2697AE9258"
 const WETH_CONTRACT_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 
-
+// CreamFinance BinanceSmartChain requirementes
+const IP_API_BINANCECHAIN = "wss://bsc-ws-node.nariox.org:443"
+const COMPTROLLER_CONTRACT_ADDRESS_BINANCE = "0x589de0f0ccf905477646599bb3e5c622c84cc0ba"
+const WBNB_CONTRACT_ADDRESS = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
 
 func main() {
+    fmt.Printf("\n\n ################## Analysis of Cream Finance on Ethereum ################## \n\n")
+    analyze(IP_API_INFURA,COMPTROLLER_CONTRACT_ADDRESS_ETHEREUM)
+
+    fmt.Printf("\n\n ################## Analysis of Cream Finance on Binance ################## \n\n")
+    analyze(IP_API_BINANCECHAIN,COMPTROLLER_CONTRACT_ADDRESS_BINANCE)
+}
+
+func analyze(ipAddress string, comptrollerAddress string){
     var underlyingAddress common.Address
 
+    // Contract to exclude on creamFinance Ethereum
+    EXCLUDED_ADDRESSES := []string{"0xBdf447B39D152d6A234B4c02772B8ab5D1783F72"} 
 
-	client, err := ethclient.Dial(IP_API_INFURA)
+	client, err := ethclient.Dial(ipAddress)
     if err != nil {
         log.Fatal(err)
     }
 
-    markets := getAllCrTokensAddress(COMPTROLLER_CONTRACT_ADDRESS, client)
+    markets := getAllCrTokensAddress(comptrollerAddress, client)
 
-    for i := 0; i < len(markets); i++ {
-        if markets[i] != common.HexToAddress(CONTRACT_TO_EXCLUDE) {
+    for i := 1; i < len(markets); i++ {
+        if !find(EXCLUDED_ADDRESSES, markets[i].String()) {
             instance, err := crToken.NewCrToken(markets[i], client)
             if err != nil {
                 log.Fatal(err)
@@ -68,6 +80,9 @@ func main() {
 
             if symbol == "crETH" {
                 underlyingAddress = common.HexToAddress(WETH_CONTRACT_ADDRESS)
+            }
+            if symbol == "crBNB" {
+                underlyingAddress = common.HexToAddress(WBNB_CONTRACT_ADDRESS)
             } else {
                 underlyingAddress, err = instance.Underlying(&bind.CallOpts{})
                 if err != nil {
@@ -80,7 +95,7 @@ func main() {
                 log.Fatal(err)
             }
 
-            // Querying the uderlying token informations (ex: crUSDT underly USDT)
+            // Querying the uderlying token using erc20 abi (ex: query USDT contract for crUSDT)
             underlyingSymbol, underlyingName, underlyingDecimals := getERC20InfosFromAddress(underlyingAddress, underlyingInstance)
             
             fmt.Printf("\n ---------------------")
@@ -132,4 +147,13 @@ func getERC20InfosFromAddress(address common.Address, instance *crToken.CrToken)
         log.Fatal(err)
     }
     return symbol, name, decimals
+}
+
+func find(slice []string, val string) (bool) {
+    for _, item := range slice {
+        if item == val {
+            return true
+        }
+    }
+    return false
 }
