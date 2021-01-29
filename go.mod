@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/btcsuite/btcd v0.21.0-beta
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/spf13/cobra v1.1.1
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
