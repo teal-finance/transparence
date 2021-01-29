@@ -18,6 +18,7 @@ import (
     "github.com/ethereum/go-ethereum/ethclient"
 
     "transparence/pkg/token"   // for ERC20 request (package generated using smart contract ABI)
+    "transparence/pkg/tellor/tellorCaller"
 )
 
 const CONFIG_FILE = "config.json"
@@ -62,13 +63,19 @@ func main() {
   fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 BTC ################## \n\n")
   totalOnEth := analyze(*rpcURL, ETH_STRING)
 
+  fmt.Printf("\n ================ Submit to Tellor Oracle the total of ERC20 BTCs ================= \n")
+  tellorRequestId := big.NewInt(50)
+  totalOnEthInt := new(big.Int)
+  totalOnEthInt.SetString(totalOnEth.String(),10)
+  tellorCaller.UpdateTellorValue(totalOnEthInt,tellorRequestId)
+  tellorCaller.GetTellorValue(tellorRequestId)
+
   fmt.Printf("\n\n ################## Analysis of Binance chain BEP20 BTC ################## \n\n")
   totalOnBinance := analyze(IP_API_BINANCECHAIN, BINANCE_STRING)
 
   fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 & Binance chain BEP20 BTC ################## \n\n")
   totalOverall := totalOnEth.Add(totalOnEth,totalOnBinance)
   printBitcoinComparison(totalOverall,"Ethereum & Binance chain")
-
 }
 
 func analyze(ipAddress string, blockchainPlatform string) (*big.Float){
