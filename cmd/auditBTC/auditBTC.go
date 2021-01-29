@@ -3,7 +3,7 @@ package main
 import (
     "encoding/json"
     "os"
-    "flag"
+    //"flag"
 
     "io/ioutil"
     "net/http"
@@ -22,7 +22,7 @@ import (
 )
 
 const CONFIG_FILE = "config.json"
-const INFURA_KEY=""
+const INFURA_KEY="aefe8d98c6fd40adb30edab0e0954557"
 const IP_API_INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_COINGECKO = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin"
 const IP_API_BINANCECHAIN = "wss://bsc-ws-node.nariox.org:443"
@@ -57,18 +57,23 @@ type CoinsMarketItem struct {
 type CoinsMarket []CoinsMarketItem
 
 func main() {
-  rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
+  //rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
 
-  flag.Parse()
+  //flag.Parse()
   fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 BTC ################## \n\n")
-  totalOnEth := analyze(*rpcURL, ETH_STRING)
+  totalOnEth := analyze(IP_API_INFURA, ETH_STRING)
 
   fmt.Printf("\n ================ Submit to Tellor Oracle the total of ERC20 BTCs ================= \n")
   tellorRequestId := big.NewInt(50)
   totalOnEthInt := new(big.Int)
   totalOnEthInt.SetString(totalOnEth.String(),10)
-  tellorCaller.UpdateTellorValue(totalOnEthInt,tellorRequestId)
-  tellorCaller.GetTellorValue(tellorRequestId)
+  tellorCaller.UpdateTellorPlaygroundValue(totalOnEthInt,tellorRequestId)
+  tellorCaller.GetTellorPlaygroundValue(tellorRequestId)
+  btcPriceOnTellor := tellorCaller.GetTellorValue(big.NewInt(2))
+  btcPriceOnTellorf := parseDecimals(btcPriceOnTellor,6)
+  btcOnEthUsdValue := new(big.Float)
+  btcOnEthUsdValue = btcOnEthUsdValue.Mul(totalOnEth,btcPriceOnTellorf)
+  fmt.Printf("\n According to Bitcoin's price on Tellor mainnet ($%2.f) that makes around $%2.f", btcPriceOnTellorf, btcOnEthUsdValue)
 
   fmt.Printf("\n\n ################## Analysis of Binance chain BEP20 BTC ################## \n\n")
   totalOnBinance := analyze(IP_API_BINANCECHAIN, BINANCE_STRING)

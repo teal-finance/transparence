@@ -12,18 +12,23 @@ import (
     "github.com/ethereum/go-ethereum/crypto"
     "github.com/ethereum/go-ethereum/ethclient"
     "transparence/pkg/tellor/tellorPlayground"
+    "transparence/pkg/tellor/UsingTellor"
 )
 
 
-const CONTRACT_ADDRESS_USING_TELLOR_RINKEBY = "0xFC1Cc83775cf42433C3E06410Bc5367E6676e56b"
 const CONTRACT_ADDRESS_TELLOR_PLAYGROUND_RINKEBY = "0x20374E579832859f180536A69093A126Db1c8aE9"
 const INFURA_KEY_RINKEBY=""
 const IP_API_INFURA_RINKEBY = "https://rinkeby.infura.io/v3/" + INFURA_KEY_RINKEBY
 
+
+const CONTRACT_ADDRESS_USING_TELLOR_MAINNET = "0xB3b7C09e1501FE212b58eEE9915DA625706eea95"
+const INFURA_KEY_MAINNET=""
+const IP_API_INFURA_MAINNET = "https://mainnet.infura.io/v3/" + INFURA_KEY_MAINNET
+
 const ETH_PRIVATE_KEY=""
 
 
-func UpdateTellorValue(value *big.Int,requestId *big.Int) {
+func UpdateTellorPlaygroundValue(value *big.Int,requestId *big.Int) {
     client, err := ethclient.Dial(IP_API_INFURA_RINKEBY)
     if err != nil {
         log.Fatal(err)
@@ -72,7 +77,7 @@ func UpdateTellorValue(value *big.Int,requestId *big.Int) {
     fmt.Print("\n")
 }
 
-func GetTellorValue(requestId *big.Int) {
+func GetTellorPlaygroundValue(requestId *big.Int) {
     client, err := ethclient.Dial(IP_API_INFURA_RINKEBY)
     if err != nil {
         log.Fatal(err)
@@ -100,5 +105,21 @@ func GetTellorValue(requestId *big.Int) {
         log.Fatal(err)
     }
 
-    fmt.Println(" Value stored in Tellor's contract = ",result)
+    fmt.Println(" Data stored in Tellor's contract = ",result)
+}
+
+
+func GetTellorValue(requestId *big.Int) (*big.Int) {
+    client, err := ethclient.Dial(IP_API_INFURA_MAINNET)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    contractAddress := common.HexToAddress(CONTRACT_ADDRESS_USING_TELLOR_MAINNET)
+    usingTellorInstance, err := UsingTellor.NewUsingTellor(contractAddress, client)
+    result, err := usingTellorInstance.GetCurrentValue(&bind.CallOpts{},requestId)
+    if err != nil {
+        log.Fatal(err)
+    }
+    return result.Value
 }
