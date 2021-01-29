@@ -3,7 +3,7 @@ package main
 import (
     "encoding/json"
     "os"
-    //"flag"
+    "flag"
 
     "io/ioutil"
     "net/http"
@@ -22,7 +22,7 @@ import (
 )
 
 const CONFIG_FILE = "config.json"
-const INFURA_KEY="aefe8d98c6fd40adb30edab0e0954557"
+const INFURA_KEY=""
 const IP_API_INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_COINGECKO = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin"
 const IP_API_BINANCECHAIN = "wss://bsc-ws-node.nariox.org:443"
@@ -57,11 +57,11 @@ type CoinsMarketItem struct {
 type CoinsMarket []CoinsMarketItem
 
 func main() {
-  //rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
+  rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
 
-  //flag.Parse()
+  flag.Parse()
   fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 BTC ################## \n\n")
-  totalOnEth := analyze(IP_API_INFURA, ETH_STRING)
+  totalOnEth := analyze(*rpcURL, ETH_STRING)
 
   fmt.Printf("\n ================ Submit to Tellor Oracle the total of ERC20 BTCs ================= \n")
   tellorRequestId := big.NewInt(50)
