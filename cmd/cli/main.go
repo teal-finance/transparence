@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -32,8 +35,15 @@ func main() {
 			}
 
 			fmt.Println("parsed flags", configFile, protocol, address)
-			fmt.Println("configuration", protocol, address)
-			panic("not implemented")
+			fmt.Println("configuration", configFile)
+
+			err := runCmd()
+			if err != nil {
+				fmt.Println(color.RedString(err.Error()))
+			} else {
+				fmt.Println(color.GreenString("ok"))
+			}
+			return nil
 		},
 	}
 
@@ -47,9 +57,17 @@ func main() {
 	check(rootCmd.Execute())
 }
 
+func runCmd() error {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if r.Intn(3) == 0 {
+		return fmt.Errorf("error")
+	}
+	return nil
+}
+
 func check(err error) {
 	if err != nil {
-		fmt.Println("error:", err)
+		fmt.Printf("%v : %v", color.RedString("error"), err)
 		os.Exit(0)
 	}
 }
