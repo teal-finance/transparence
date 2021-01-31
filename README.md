@@ -20,7 +20,7 @@ From there, we developed the functions to retrieve the data of interest and proc
 
 Our goals are to:
 * verify pegged assets cross chain (Bitcoin on Ethereum/Binance/..., ERC20 on other chains) and raise alarm when there is a breach of trust
-* identify pain prices from protocoles with a liquidation, CDP, loans, insurance, options,  to avoid snow ball effect
+* identify pain prices from protocols with a liquidation, CDP, loans, insurance, options,  to avoid snow ball effect
 * provide those health/risk metrics on chain for smart contracts
 
 ## Technical Summary 
