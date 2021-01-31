@@ -45,8 +45,6 @@ func main() {
 	client.ImportAddressRescan(WBTC, "wbtc", false)
 	client.ImportAddressRescan(RENBTC, "renbtc", false)
 
-	fmt.Println(client.RPC.GetBalance("*"))
-	fmt.Println(client.RPC.ListUnspent())
 
 
 	/*amount,err:=client.GetBalance("binancebtc")
@@ -56,7 +54,7 @@ func main() {
 
 	fmt.Println("Binance balance is :", amount)
 	fmt.Println("balance of all accoutns ")*/
-	//fmt.Println(client.RPC.GetBalances())
+	fmt.Println(client.RPC.GetBalances())
 
 
 	//fmt.Println(futur)
