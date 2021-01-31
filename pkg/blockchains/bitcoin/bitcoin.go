@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
 )
@@ -234,6 +235,15 @@ func (c *BtcClient) ExtractAddressesFromTx(txHash string) ([]string, error) {
 func (c *BtcClient) ImportAddressRescan(address string, account string, rescan bool) rpcclient.FutureImportAddressResult {
 	return c.RPC.ImportAddressRescanAsync(address, account, rescan)
 }
+
+// GetBalance this return the balance of the specify account provided it is already added to Bitcoin Client as
+// a watch-only address using ImportAddressRescan
+// This doesn't work because it was removed from core.
+// TODO make a custom call to the RPC method "listreceivedbylabel" and create a function for the sent tx
+func (c *BtcClient) GetBalance(account string) (btcutil.Amount, error){
+	return c.RPC.GetBalance(account)
+}
+
 
 /*
 // ExtractAddresses an array of the addresses present in the block. the index follow the tx indexes in the block
