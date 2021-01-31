@@ -6,6 +6,7 @@ require (
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fatih/color v1.10.0
+	github.com/go-chi/chi v1.5.1 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
