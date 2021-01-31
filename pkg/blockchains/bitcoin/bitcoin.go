@@ -1,17 +1,16 @@
 package bitcoin
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
-	"encoding/hex"
 
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/chaincfg"
-
 )
 
 // BtcClient ...
@@ -145,12 +144,12 @@ func moveGoalpostsSup(t1, t2 time.Time, b2 int64) int64 {
 func (c *BtcClient) ExtractVout(vouts []btcjson.Vout) ([]string, error) {
 	addresses := make([]string, 0)
 	if vouts == nil {
-		return addresses,nil
+		return addresses, nil
 	}
 	for _, vout := range vouts {
 		addresses = append(addresses, vout.ScriptPubKey.Addresses...)
 	}
-	return addresses,nil
+	return addresses, nil
 }
 
 // ExtractVin extract the list of addresses involved.
@@ -182,7 +181,7 @@ func (c *BtcClient) ExtractVin(vins []btcjson.Vin) ([]string, error) {
 		if err != nil {
 			return []string{}, err
 		}
-		tx:=transaction.Vout[vin.Vout]
+		tx := transaction.Vout[vin.Vout]
 		scriptHex := tx.ScriptPubKey.Hex
 		script, err := hex.DecodeString(scriptHex)
 		if err != nil {
@@ -217,23 +216,23 @@ func (c *BtcClient) ExtractAddressesFromTx(txHash string) ([]string, error) {
 		return addresses, erra
 	}
 
-	vins,erro:=c.ExtractVin(transactionVerbose.Vin)
+	vins, erro := c.ExtractVin(transactionVerbose.Vin)
 	if erro != nil {
 		return addresses, erro
 	}
-	vouts,err:=c.ExtractVout(transactionVerbose.Vout)
+	vouts, err := c.ExtractVout(transactionVerbose.Vout)
 	if err != nil {
 		return addresses, err
 	}
-	addresses = append(addresses,vins...)
-	addresses = append(addresses,vouts...)
+	addresses = append(addresses, vins...)
+	addresses = append(addresses, vouts...)
 
 	return addresses, nil
 }
 
 // ImportAddressRescan adds address to be watched in the client
-func (c *BtcClient) ImportAddressRescan(address string, account string, rescan bool) rpcclient.FutureImportAddressResult{
-	return c.RPC.ImportAddressRescanAsync(address,account,rescan)
+func (c *BtcClient) ImportAddressRescan(address string, account string, rescan bool) rpcclient.FutureImportAddressResult {
+	return c.RPC.ImportAddressRescanAsync(address, account, rescan)
 }
 
 /*

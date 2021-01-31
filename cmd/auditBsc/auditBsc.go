@@ -7,8 +7,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-    "transparence/pkg/TransparenceUtils"
-    "transparence/pkg/erc20adapter"
+	transparenceutils "transparence/pkg/TransparenceUtils"
+	"transparence/pkg/erc20adapter"
 )
 
 const CONFIG_FILE = "binancePeggedTokens.json"
@@ -16,8 +16,6 @@ const INFURA_KEY = ""
 const IP_API_INFURA = "Https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_BINANCESMARTCHAIN = "wss://bsc-ws-node.nariox.org:443"
 const IP_API_BINANCECHAIN = "Https://dex.binance.org/api/v1/tokens"
-
-
 
 func main() {
 	auditBinanceTokens(IP_API_INFURA)
@@ -32,7 +30,7 @@ func auditBinanceTokens(ipAddress string) {
 
 	for i := 0; i < len(tokens.PeggedTokens); i++ {
 		tokenAddress := common.HexToAddress(tokens.PeggedTokens[i].CONTRACT_ADDRESS)
-		instance := erc20adapter.NewToken(tokenAddress,client)
+		instance := erc20adapter.NewToken(tokenAddress, client)
 
 		if tokens.PeggedTokens[i].SYMBOL == "MKR" {
 			name = "Maker"
@@ -41,8 +39,8 @@ func auditBinanceTokens(ipAddress string) {
 			name = erc20adapter.GetName(instance)
 			symbol = erc20adapter.GetSymbol(instance)
 		}
-            
-        decimals := erc20adapter.GetDecimals(instance)
+
+		decimals := erc20adapter.GetDecimals(instance)
 
 		fmt.Printf("\n---- Auditing Binance Pegged Token : '%s'  (%s)\n", name, symbol)
 		fmt.Printf("- Ethereum reserve addresses : %s \n", tokens.PeggedTokens[i].CONTRACT_ADDRESS)
@@ -74,14 +72,14 @@ func executeAuditOnEth(tokenAudited erc20adapter.PeggedToken, supplyOnEth *big.F
 
 	for i := 0; i < len(tokenAudited.BSC_PEGGED_ADDRESSES); i++ {
 		tokenAddress := common.HexToAddress(tokenAudited.BSC_PEGGED_ADDRESSES[i])
-		instance := erc20adapter.NewToken(tokenAddress,client)
-        decimals := erc20adapter.GetDecimals(instance)
-        totalSupply := erc20adapter.GetTotalSupply(instance)
+		instance := erc20adapter.NewToken(tokenAddress, client)
+		decimals := erc20adapter.GetDecimals(instance)
+		totalSupply := erc20adapter.GetTotalSupply(instance)
 		ftotalSupply := transparenceutils.ParseDecimals(totalSupply, decimals)
 		supplyOnBitcoin.Add(supplyOnBitcoin, ftotalSupply)
 	}
 	auditResult := transparenceutils.Verif(supplyOnEth, supplyOnBitcoin)
-	fmt.Printf("- Reserve on Ethereum : %f \n- TotalSupply on BNC+BSC: %f\n---- Audit result : %s \n", supplyOnEth, supplyOnBitcoin,auditResult)
+	fmt.Printf("- Reserve on Ethereum : %f \n- TotalSupply on BNC+BSC: %f\n---- Audit result : %s \n", supplyOnEth, supplyOnBitcoin, auditResult)
 }
 
 func getBinanceChainTokens() ([]erc20adapter.BEP2Token, error) {

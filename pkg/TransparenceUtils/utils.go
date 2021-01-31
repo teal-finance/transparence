@@ -2,15 +2,15 @@ package transparenceutils
 
 import (
 	"encoding/json"
-    "os"
-    "fmt"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
 	"math/big"
 	"net/http"
+	"os"
 
-    "transparence/pkg/erc20adapter"
+	"transparence/pkg/erc20adapter"
 )
 
 func Find(slice []string, val string) (int, bool) {
@@ -43,28 +43,27 @@ func HttpRequest(address string) []byte {
 }
 
 func PercentOf(part float64, total float64) float64 {
-    return (part * 100) / total
+	return (part * 100) / total
 }
 
-func Verif(supplyOnReserve *big.Float, supplyOnToken *big.Float) (string){
-    fsupplyOnReserve, _ := supplyOnReserve.Float64()
-    fsupplyOnToken, _ := supplyOnToken.Float64()
-    if(fsupplyOnReserve < fsupplyOnToken){
-        return "KO"
-    }else{
-        return "OK"
-    }
+func Verif(supplyOnReserve *big.Float, supplyOnToken *big.Float) string {
+	fsupplyOnReserve, _ := supplyOnReserve.Float64()
+	fsupplyOnToken, _ := supplyOnToken.Float64()
+	if fsupplyOnReserve < fsupplyOnToken {
+		return "KO"
+	} else {
+		return "OK"
+	}
 }
 
-
-func ReadConfigFile(configFile string) (erc20adapter.PeggedTokens){
-    file, _ := os.Open(configFile)
-    defer file.Close()
-    decoder := json.NewDecoder(file)
-    tokens := erc20adapter.PeggedTokens{}
-    err := decoder.Decode(&tokens)
-    if err != nil {
-      fmt.Println("error reading conf file :", err)
-    }
-    return tokens
+func ReadConfigFile(configFile string) erc20adapter.PeggedTokens {
+	file, _ := os.Open(configFile)
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	tokens := erc20adapter.PeggedTokens{}
+	err := decoder.Decode(&tokens)
+	if err != nil {
+		fmt.Println("error reading conf file :", err)
+	}
+	return tokens
 }

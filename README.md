@@ -19,6 +19,7 @@ The second feature is more defi-oriented and checks the metrics of Compound-fork
 
 # Technical details
 *In this part we will describe briefly the different technology used and how we are communicating with several blockchains.*
+
 Bitcoin:
 - Local Node
 
@@ -43,12 +44,12 @@ Coingecko :
 - API to get informations about cryptocurrencies (not used in audits)
 
 # References:
-- Compound
-- Cream
-- https://www.binance.org/en/assets-proof
-- Tellor
-- go eth
-- defipulse github
+- [Compound Protocol Dos](https://compound.finance/docs)
+- [CreamFinance Docs](https://docs.cream.finance/)
+- [Binance Proof of Asset](https://www.binance.org/en/assets-proof)
+- [Tellor Docs](https://docs.tellor.io/tellor/)
+- [Go-ethereum](https://github.com/ethereum/go-ethereum)
+- [Defi-Pulse-Adapters](https://github.com/ConcourseOpen/DeFi-Pulse-Adapters)
 
 
 
