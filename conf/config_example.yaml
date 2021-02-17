@@ -1,27 +1,5 @@
-rpc:
-- blockchain: ethereum
-  userpass: api key if any
-- blockchain: bitcoin
-  userpass: user:pass
-- blockchain: binance
-  userpass: api key if any
-
-useraddress:
-- blockchain: binance
-  address: 0x
-- blockchain: bitcoin
-  address: 1A
-- blockchain: ethereum
-  address: 0x
-
-tokens:
-- blockchain_platform: Ethereum
-  symbol: WBTC
-  contract_address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
-  btc_addresses:
-  - 3ErNFK17MbH3GAGfakMwTrKo8uHmBuuVX1
-- blockchain_platform: Ethereum
-  symbol: renBTC
-  contract_address: '0xeb4c2781e4eba804ce9a9803c67d0893436bb27d'
-  btc_addresses:
-  - 19iqYbeATe4RxghQZJnYVFU4mjUUu76EA6
+api_keys:
+- blockchain: ethereum-mainnet
+  api_key: 
+- blockchain: ethereum-rinkeby
+  api_key: 

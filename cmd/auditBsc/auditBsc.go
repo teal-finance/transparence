@@ -1,4 +1,4 @@
-package main
+package auditBsc
 
 import (
 	"encoding/json"
@@ -9,52 +9,46 @@ import (
 
 	transparenceutils "transparence/pkg/TransparenceUtils"
 	"transparence/pkg/erc20adapter"
+	"github.com/ethereum/go-ethereum/ethclient"
+
+	"transparence/pkg/tellor/tellorCaller"
 )
 
-const CONFIG_FILE = "binancePeggedTokens.json"
+const CONFIG_FILE = "./cmd/auditBsc/binancePeggedTokens.json"
 const INFURA_KEY = ""
 const IP_API_INFURA = "Https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_BINANCESMARTCHAIN = "wss://bsc-ws-node.nariox.org:443"
 const IP_API_BINANCECHAIN = "Https://dex.binance.org/api/v1/tokens"
 
-func main() {
-	auditBinanceTokens(IP_API_INFURA)
+func RunAudit(symbol string,tellor bool) {
+	if symbol == "" {
+		auditAllBinanceTokens(IP_API_INFURA)
+	} else {
+		auditSpecificBinanceToken(IP_API_INFURA,symbol,tellor)	
+	}	
 }
 
-func auditBinanceTokens(ipAddress string) {
-	total := big.NewFloat(0)
-	var name, symbol string
-
+func auditAllBinanceTokens(ipAddress string) {
 	tokens := transparenceutils.ReadConfigFile(CONFIG_FILE)
 	client := erc20adapter.NewClientConnection(ipAddress)
 
 	for i := 0; i < len(tokens.PeggedTokens); i++ {
-		tokenAddress := common.HexToAddress(tokens.PeggedTokens[i].CONTRACT_ADDRESS)
-		instance := erc20adapter.NewToken(tokenAddress, client)
-
-		if tokens.PeggedTokens[i].SYMBOL == "MKR" {
-			name = "Maker"
-			symbol = tokens.PeggedTokens[i].SYMBOL
-		} else {
-			name = erc20adapter.GetName(instance)
-			symbol = erc20adapter.GetSymbol(instance)
-		}
-
-		decimals := erc20adapter.GetDecimals(instance)
-
-		fmt.Printf("\n---- Auditing Binance Pegged Token : '%s'  (%s)\n", name, symbol)
-		fmt.Printf("- Ethereum reserve addresses : %s \n", tokens.PeggedTokens[i].CONTRACT_ADDRESS)
-		fmt.Printf("- Binance Chain reserve addresses : %s \n", tokens.PeggedTokens[i].BNC_PEGGED_ADDRESSES)
-		fmt.Printf("- Binance Smart Chain reserve addresses : %s \n", tokens.PeggedTokens[i].BSC_PEGGED_ADDRESSES)
-
-		totalReserve := erc20adapter.GetBalanceOfToken(tokens.PeggedTokens[i].RESERVE_ADDRESS, instance)
-		ftotalReserve := transparenceutils.ParseDecimals(totalReserve, decimals)
-		total.Add(total, ftotalReserve)
-		executeAuditOnEth(tokens.PeggedTokens[i], ftotalReserve)
+		auditToken(tokens.PeggedTokens[i],client,false)
 	}
 }
 
-func executeAuditOnEth(tokenAudited erc20adapter.PeggedToken, supplyOnEth *big.Float) {
+func auditSpecificBinanceToken(ipAddress string, symbol string, tellor bool) {
+	tokens := transparenceutils.ReadConfigFile(CONFIG_FILE)
+	client := erc20adapter.NewClientConnection(ipAddress)
+
+	for i := 0; i < len(tokens.PeggedTokens); i++ {
+		if symbol == tokens.PeggedTokens[i].SYMBOL {
+			auditToken(tokens.PeggedTokens[i],client, tellor)
+		}
+	}
+}
+
+func executeAuditOnEth(tokenAudited erc20adapter.PeggedToken, supplyOnEth *big.Float, tellor bool) {
 	supplyOnBitcoin := big.NewFloat(0)
 	tokenSupply := new(big.Float)
 
@@ -79,7 +73,14 @@ func executeAuditOnEth(tokenAudited erc20adapter.PeggedToken, supplyOnEth *big.F
 		supplyOnBitcoin.Add(supplyOnBitcoin, ftotalSupply)
 	}
 	auditResult := transparenceutils.Verif(supplyOnEth, supplyOnBitcoin)
-	fmt.Printf("- Reserve on Ethereum : %f \n- TotalSupply on BNC+BSC: %f\n---- Audit result : %s \n", supplyOnEth, supplyOnBitcoin, auditResult)
+	fmt.Printf("- Reserve on Ethereum : %f \n- TotalSupply on BNC+BSC: %f\n---- Audit result : %t \n", supplyOnEth, supplyOnBitcoin, auditResult)
+	if tellor == true {
+		j := 0.0
+		if auditResult{
+			j=1.0
+		}
+		executeTellor(big.NewFloat(j))
+	}
 }
 
 func getBinanceChainTokens() ([]erc20adapter.BEP2Token, error) {
@@ -89,4 +90,47 @@ func getBinanceChainTokens() ([]erc20adapter.BEP2Token, error) {
 		return nil, err
 	}
 	return tokens, nil
+}
+
+func auditToken(token erc20adapter.PeggedToken, client *ethclient.Client, tellor bool) {
+	total := big.NewFloat(0)
+	var name, symbol string
+	tokenAddress := common.HexToAddress(token.CONTRACT_ADDRESS)
+	instance := erc20adapter.NewToken(tokenAddress, client)
+
+	if token.SYMBOL == "MKR" {
+		name = "Maker"
+		symbol = token.SYMBOL
+	} else {
+		name = erc20adapter.GetName(instance)
+		symbol = erc20adapter.GetSymbol(instance)
+	}
+
+	decimals := erc20adapter.GetDecimals(instance)
+
+	fmt.Printf("\n---- Auditing Binance Pegged Token : '%s'  (%s)\n", name, symbol)
+	fmt.Printf("- Ethereum reserve addresses : %s \n", token.CONTRACT_ADDRESS)
+	fmt.Printf("- Binance Chain reserve addresses : %s \n", token.BNC_PEGGED_ADDRESSES)
+	fmt.Printf("- Binance Smart Chain reserve addresses : %s \n", token.BSC_PEGGED_ADDRESSES)
+
+	totalReserve := erc20adapter.GetBalanceOfToken(token.RESERVE_ADDRESS, instance)
+	ftotalReserve := transparenceutils.ParseDecimals(totalReserve, decimals)
+	total.Add(total, ftotalReserve)
+	executeAuditOnEth(token, ftotalReserve, tellor)
+}
+
+func executeTellor(value *big.Float){
+	fmt.Printf("\n ================ Submitting to Tellor Oracle the Proof of Audit ================= \n")
+	tellorRequestId := big.NewInt(50)
+	totalOnEthInt := new(big.Int)
+	totalOnEthInt.SetString(value.String(), 10)
+	tellorCaller.UpdateTellorPlaygroundValue(totalOnEthInt, tellorRequestId)
+	tellorCaller.GetTellorPlaygroundValue(tellorRequestId)
+
+	// btcPriceOnTellor := tellorCaller.GetTellorValue(TELLOR_ID_BTC_PRICE)
+	// btcPriceOnTellorf := transparenceutils.ParseDecimals(btcPriceOnTellor, 6)
+	// btcOnEthUsdValue := new(big.Float)
+	// btcOnEthUsdValue = btcOnEthUsdValue.Mul(totalOnEth, btcPriceOnTellorf)
+	// fmt.Printf("\n According to Bitcoin's price on Tellor mainnet ($%2.f) that makes around $%2.f", btcPriceOnTellorf, btcOnEthUsdValue)
+
 }

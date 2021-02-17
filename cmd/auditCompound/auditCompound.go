@@ -1,4 +1,4 @@
-package main
+package auditCompound
 
 import (
 	"fmt"
@@ -29,12 +29,16 @@ const WBNB_CONTRACT_ADDRESS = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
 // Compound Ethereum requirements
 const COMPTROLLER_CONTRACT_COMPOUND_ETHEREUM = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B"
 
-func main() {
-	analyze(IP_API_INFURA, COMPTROLLER_CONTRACT_CREAM_ETHEREUM, ETH_STRING)
-
-	analyze(IP_API_BINANCECHAIN, COMPTROLLER_CONTRACT_CREAM_BINANCE, BINANCE_STRING)
-
-	analyze(IP_API_INFURA, COMPTROLLER_CONTRACT_COMPOUND_ETHEREUM, ETH_STRING)
+func RunAudit(blockchain string, platform string) {
+	if blockchain == "ethereum" && platform == "cream" {
+		analyze(IP_API_INFURA, COMPTROLLER_CONTRACT_CREAM_ETHEREUM, ETH_STRING)
+	}
+	if blockchain == "binance" && platform == "cream"{
+		analyze(IP_API_BINANCECHAIN, COMPTROLLER_CONTRACT_CREAM_BINANCE, BINANCE_STRING)
+	}
+	if platform == "compound" {
+		analyze(IP_API_INFURA, COMPTROLLER_CONTRACT_COMPOUND_ETHEREUM, ETH_STRING)
+	}
 }
 
 func analyze(ipAddress string, comptrollerAddress string, platform string) {

@@ -1,7 +1,7 @@
-package main
+package auditBTC
 
 import (
-	"flag"
+	//"flag"
 
 	"fmt"
 	"math/big"
@@ -11,10 +11,9 @@ import (
 	transparenceutils "transparence/pkg/TransparenceUtils"
 	"transparence/pkg/coingecko"
 	"transparence/pkg/erc20adapter"
-	"transparence/pkg/tellor/tellorCaller"
 )
 
-const CONFIG_FILE = "config.json"
+const CONFIG_FILE = "./cmd/auditBTC/config.json"
 const INFURA_KEY = ""
 const IP_API_INFURA = "https://mainnet.infura.io/v3/" + INFURA_KEY
 const IP_API_BINANCECHAIN = "wss://bsc-ws-node.nariox.org:443"
@@ -24,26 +23,14 @@ const BINANCE_STRING = "BinanceChain"
 
 var TELLOR_ID_BTC_PRICE = big.NewInt(2)
 
-func main() {
-	rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
+func RunAudit() {
+	//rpcURL := flag.String("r", "127.0.0.1:8545", "rpc url ")
 
-	flag.Parse()
+	//flag.Parse()
 	fmt.Printf("\n\n ################## Analysis of Ethereum ERC20 BTC ################## \n\n")
-	totalOnEth := analyze(*rpcURL, ETH_STRING)
+	totalOnEth := analyze(IP_API_INFURA, ETH_STRING)
 
-	fmt.Printf("\n ================ Submit to Tellor Oracle the total of ERC20 BTCs ================= \n")
-	tellorRequestId := big.NewInt(50)
-	totalOnEthInt := new(big.Int)
-	totalOnEthInt.SetString(totalOnEth.String(), 10)
-	tellorCaller.UpdateTellorPlaygroundValue(totalOnEthInt, tellorRequestId)
-	tellorCaller.GetTellorPlaygroundValue(tellorRequestId)
-
-	btcPriceOnTellor := tellorCaller.GetTellorValue(TELLOR_ID_BTC_PRICE)
-	btcPriceOnTellorf := transparenceutils.ParseDecimals(btcPriceOnTellor, 6)
-	btcOnEthUsdValue := new(big.Float)
-	btcOnEthUsdValue = btcOnEthUsdValue.Mul(totalOnEth, btcPriceOnTellorf)
-	fmt.Printf("\n According to Bitcoin's price on Tellor mainnet ($%2.f) that makes around $%2.f", btcPriceOnTellorf, btcOnEthUsdValue)
-
+	//executeTellor(totalOnEth)
 	fmt.Printf("\n\n ################## Analysis of Binance chain BEP20 BTC ################## \n\n")
 	totalOnBinance := analyze(IP_API_BINANCECHAIN, BINANCE_STRING)
 
@@ -87,17 +74,17 @@ func printBitcoinComparison(total *big.Float, symbolToCompare string) {
 	fmt.Printf("================== Percentage of BTC on %s : %.2f %% ================== \n", symbolToCompare, transparenceutils.PercentOf(ftotal, btcInfos.CirculatingSupply))
 }
 
-func displayTokenInfos(name string, symbol string, totalSupply *big.Float, address string, auditResult string) {
+func displayTokenInfos(name string, symbol string, totalSupply *big.Float, address string, auditResult bool) {
 	fmt.Println("Token contract address: " + address)
 	fmt.Printf("Token name: %s\n", name)
 	fmt.Printf("Token symbol: %s\n", symbol)
-	fmt.Printf("Token totalSupply: %.2f\n", totalSupply)
-	fmt.Printf("Audit result : %s\n\n", auditResult)
+	fmt.Printf("Token totalSupply: %.2f\n\n", totalSupply)
+	//fmt.Printf("Audit result : %s\n\n", auditResult)
 }
 
-func executeAudit(btcAddresses []string, supplyOnToken *big.Float) string {
+func executeAudit(btcAddresses []string, supplyOnToken *big.Float) bool {
 	supplyOnReserve := big.NewFloat(0)
-	fmt.Printf("Exexcuting audit on these btc addresses : %s \n", btcAddresses)
+	//fmt.Printf("Exexcuting audit on these btc addresses : %s \n", btcAddresses)
 	for i := 0; i < len(btcAddresses); i++ {
 		supplyOnReserve.Add(supplyOnReserve, getBalanceFromBitcoinAddress(btcAddresses[i]))
 	}

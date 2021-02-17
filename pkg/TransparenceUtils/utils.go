@@ -46,13 +46,13 @@ func PercentOf(part float64, total float64) float64 {
 	return (part * 100) / total
 }
 
-func Verif(supplyOnReserve *big.Float, supplyOnToken *big.Float) string {
+func Verif(supplyOnReserve *big.Float, supplyOnToken *big.Float) bool {
 	fsupplyOnReserve, _ := supplyOnReserve.Float64()
 	fsupplyOnToken, _ := supplyOnToken.Float64()
 	if fsupplyOnReserve < fsupplyOnToken {
-		return "KO"
+		return false
 	} else {
-		return "OK"
+		return true
 	}
 }
 

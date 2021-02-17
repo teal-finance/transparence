@@ -2,20 +2,22 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	//"github.com/spf13/viper"
+	"transparence/cmd/auditBTC"
+	"transparence/cmd/auditBsc"
+	"transparence/cmd/auditCompound"
 )
 
 func main() {
 	var (
-		configFile string
 		protocol   string
-		address    []string
+		symbol 	string
+		blockchain string
+		tellor bool
 	)
 
 	rootCmd := &cobra.Command{
@@ -23,46 +25,22 @@ func main() {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var config configValue
-
-			fmt.Println("READING CONFIGURATION")
-			viper.SetConfigFile(configFile)
-			if err := viper.ReadInConfig(); err != nil {
-				return fmt.Errorf("reading config file: %w", err)
-			}
-			if err := viper.Unmarshal(&config); err != nil {
-				return fmt.Errorf("unable to decode configuration: %w", err)
-			}
-
-			fmt.Println("parsed flags", configFile, protocol, address)
-			fmt.Println("configuration", configFile)
-
-			err := runCmd()
-			if err != nil {
-				fmt.Println(color.RedString(err.Error()))
-			} else {
-				fmt.Println(color.GreenString("ok"))
-			}
+			executePlatformAudit(blockchain,protocol,symbol,tellor)
 			return nil
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "configuration file")
+	//rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "configuration file")
+	rootCmd.PersistentFlags().StringVarP(&blockchain, "blockchain", "b", "", "blockchain to explore ")
 	rootCmd.PersistentFlags().StringVarP(&protocol, "protocol", "p", "", "protocol to explore ")
-	rootCmd.PersistentFlags().StringSliceVarP(&address, "address", "a", []string{}, "parameter for the function call")
-	check(rootCmd.MarkPersistentFlagRequired("config"))
-	check(rootCmd.MarkPersistentFlagRequired("protocol"))
-	check(rootCmd.MarkPersistentFlagRequired("address"))
+	rootCmd.PersistentFlags().StringVarP(&symbol, "symbol", "s", "", "symbol of the cryptocurrency to audit")
+	rootCmd.PersistentFlags().BoolVarP(&tellor, "tellor", "t", false, "tellor feature enabled")
+	//rootCmd.PersistentFlags().StringSliceVarP(&address, "address", "a", []string{}, "parameter for the function call")
+	//check(rootCmd.MarkPersistentFlagRequired("config"))
+	//check(rootCmd.MarkPersistentFlagRequired("protocol"))
+	//check(rootCmd.MarkPersistentFlagRequired("addre-(ss"))
 
 	check(rootCmd.Execute())
-}
-
-func runCmd() error {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	if r.Intn(3) == 0 {
-		return fmt.Errorf("error")
-	}
-	return nil
 }
 
 func check(err error) {
@@ -72,25 +50,23 @@ func check(err error) {
 	}
 }
 
+func executePlatformAudit(blockchain string, protocol string, symbol string, tellor bool){
+	if blockchain == "binance" && protocol == "pegged-tokens" {
+		auditBsc.RunAudit(symbol,tellor)
+	}
+	if (blockchain == "ethereum" && protocol == "compound" || protocol == "cream") {
+		auditCompound.RunAudit(blockchain,protocol)
+	}
+	if blockchain == "bitcoin" && protocol == "pegged-tokens" {
+		auditBTC.RunAudit()
+	}
+}
+
 type configValue struct {
-	RPC         []RPC         `mapstructure:"rpc"`
-	Useraddress []UserAddress `mapstructure:"useraddress"`
-	Tokens      []Token       `mapstructure:"tokens"`
+	Api_keys      []ApiKey       `mapstructure:"api_keys"`
 }
 
-type RPC struct {
+type ApiKey struct {
 	Blockchain string `mapstructure:"blockchain"`
-	Userpass   string `mapstructure:"userpass"`
-}
-
-type UserAddress struct {
-	Blockchain string `mapstructure:"blockchain"`
-	Address    string `mapstructure:"address"`
-}
-
-type Token struct {
-	BlockchainPlatform string   `mapstructure:"blockchain_platform"`
-	Symbol             string   `mapstructure:"symbol"`
-	ContractAddress    string   `mapstructure:"contract_address"`
-	BtcAddresses       []string `mapstructure:"btc_addresses"`
+	Api_key      string       `mapstructure:"api_key"`
 }

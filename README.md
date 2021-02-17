@@ -49,6 +49,17 @@ Many other interesting metrics, for both tokens and platforms, can be deduced fr
 - Coingecko :
     - API to get informations about cryptocurrencies (not used in audits)
 
+### Command Line interface
+There is 3 arguments that can be used for Transparence's CLI, "blockchain", "protocol","tellor".
+TODO: add args description
+Here are some examples:
+- go run ./cmd/cli/main.go --blockchain binance --protocol pegged-tokens 
+- go run ./cmd/cli/main.go --blockchain binance --protocol pegged-tokens --symbol UNI
+- go run ./cmd/cli/main.go --blockchain binance --protocol pegged-tokens --symbol UNI --tellor
+- go run ./cmd/cli/main.go --blockchain ethereum --protocol compound
+- go run ./cmd/cli/main.go --blockchain binance --protocol cream
+- go run ./cmd/cli/main.go --blockchain bitcoin --protocol pegged-tokens
+
 ### Further works
 Transparence will continue to add different blockchains and protocols with a focus on the transparency and "health check" of cryptocurrencies. We will also continue to extract some metrics from our data in order to better represent the risks/state of defi.
 
