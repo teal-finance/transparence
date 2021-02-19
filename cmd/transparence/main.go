@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/json"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"log"
 	"strings"
-
 	"transparence/pkg/blockchains/bitcoin"
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/ybbus/jsonrpc/v2"
 )
 
 //Tx test
@@ -39,12 +42,26 @@ func main() {
 	pass := strings.Split(*userpass, ":")[1]
 	client, _ := bitcoin.New(*rpcURL, user, pass)
 
-	futur := client.ImportAddressRescan(BinanceBTC, "binancebtc", false)
+	/*futur := client.ImportAddressRescan(BinanceBTC, "binancebtc", false)
 	fmt.Println(client.RPC.GetBalances())
 	fmt.Println(client.RPC.GetBalance("binancebtc"))
 
 	fmt.Println(futur)
-	fmt.Println(futur.Receive())
+	fmt.Println(futur.Receive())*/
+	rpcClient := jsonrpc.NewClientWithOpts(*rpcURL, &jsonrpc.RPCClientOpts{
+   		CustomHeaders: map[string]string{
+   			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+pass)),
+   		},
+   	})
+    response, err := rpcClient.Call("listreceivedbylabel",0,true,true)//, 1, 2) // send with Authorization-Header
+		if erra != nil {
+			log.Fatal(erra, "bad listreceived")
+
+		}
+		fmt.Println(response)
+		fmt.Println(err)
+
+
 
 	addresses, err := client.ExtractAddressesFromTx(Tx)
 	if err != nil {
