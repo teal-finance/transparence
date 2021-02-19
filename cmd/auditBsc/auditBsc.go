@@ -23,6 +23,8 @@ const IP_API_BINANCECHAIN = "Https://dex.binance.org/api/v1/tokens"
 func RunAudit(symbol string,tellor bool) {
 	if symbol == "" {
 		auditAllBinanceTokens(IP_API_INFURA)
+	} else if symbol == "BTCB" {
+		auditBTC()
 	} else {
 		auditSpecificBinanceToken(IP_API_INFURA,symbol,tellor)	
 	}	
@@ -45,6 +47,7 @@ func auditSpecificBinanceToken(ipAddress string, symbol string, tellor bool) {
 		if symbol == tokens.PeggedTokens[i].SYMBOL {
 			auditToken(tokens.PeggedTokens[i],client, tellor)
 		}
+
 	}
 }
 
@@ -83,6 +86,52 @@ func executeAuditOnEth(tokenAudited erc20adapter.PeggedToken, supplyOnEth *big.F
 	}
 }
 
+func auditBTC(){
+	totalSupply := big.NewFloat(0)
+	totalSupplyBnc := new(big.Float)
+
+	tokens := transparenceutils.ReadConfigFile(CONFIG_FILE)
+	clientEth := erc20adapter.NewClientConnection(IP_API_INFURA)
+	//clientBnc := erc20adapter.NewClientConnection(IP_API_BINANCECHAIN)
+	clientBsc := erc20adapter.NewClientConnection(IP_API_BINANCESMARTCHAIN)
+
+	binanceTokens, _ := getBinanceChainTokens()
+
+	for i := 0; i < len(tokens.PeggedTokens); i++ {
+		if tokens.PeggedTokens[i].SYMBOL == "BTCB" {
+			tokenAddressEth := common.HexToAddress(tokens.PeggedTokens[i].CONTRACT_ADDRESS)
+			instanceEth := erc20adapter.NewToken(tokenAddressEth, clientEth)
+			totalSupplyEth := erc20adapter.GetTotalSupply(instanceEth)
+			decimals := erc20adapter.GetDecimals(instanceEth)
+			ftotalSupplyEth := transparenceutils.ParseDecimals(totalSupplyEth, decimals)
+			totalSupply.Add(totalSupply, ftotalSupplyEth)
+
+			// tokenAddressBnc := common.HexToAddress(tokens.PeggedTokens[i].BNC_PEGGED_ADDRESSES[0])
+			// instanceBnc := erc20adapter.NewToken(tokenAddressBnc, clientBnc)
+			// totalSupplyBnc := erc20adapter.GetTotalSupply(instanceBnc)
+			// decimals = erc20adapter.GetDecimals(instanceBnc)
+			// ftotalSupply = transparenceutils.ParseDecimals(totalSupplyBnc, decimals)
+			// totalSupply.Add(totalSupply, ftotalSupply)
+			// fmt.Print(totalSupply)
+			for _, item := range binanceTokens {
+				if item.Symbol == "BTCB-1DE" {
+					totalSupplyBnc.SetString(item.TotalSupply)
+					totalSupply.Add(totalSupply, totalSupplyBnc)
+				}
+			}
+
+			tokenAddressBsc := common.HexToAddress(tokens.PeggedTokens[i].BSC_PEGGED_ADDRESSES[0])
+			instanceBsc := erc20adapter.NewToken(tokenAddressBsc, clientBsc)
+			totalSupplyBsc := erc20adapter.GetTotalSupply(instanceBsc)
+			decimals = erc20adapter.GetDecimals(instanceBsc)
+			ftotalSupplyBsc := transparenceutils.ParseDecimals(totalSupplyBsc, decimals)
+			totalSupply.Add(totalSupply, ftotalSupplyBsc)
+			fmt.Printf("- TotalSupply on Ethereum : %f \n- TotalSupply on BNC: %f\n- TotalSupply on BSC: %f\n--- Overall TotalSupply: %f\n", ftotalSupplyEth, totalSupplyBnc, ftotalSupplyBsc,totalSupply)
+		}
+
+	}
+}
+
 func getBinanceChainTokens() ([]erc20adapter.BEP2Token, error) {
 	var tokens []erc20adapter.BEP2Token
 	body := transparenceutils.HttpRequest(IP_API_BINANCECHAIN)
@@ -118,6 +167,8 @@ func auditToken(token erc20adapter.PeggedToken, client *ethclient.Client, tellor
 	total.Add(total, ftotalReserve)
 	executeAuditOnEth(token, ftotalReserve, tellor)
 }
+
+
 
 func executeTellor(value *big.Float){
 	fmt.Printf("\n ================ Submitting to Tellor Oracle the Proof of Audit ================= \n")
