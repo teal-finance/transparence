@@ -50,7 +50,7 @@ Many other interesting metrics, for both tokens and platforms, can be deduced fr
     - API to get informations about cryptocurrencies (not used in audits)
 
 ### Command Line interface
-There is 3 arguments that can be used for Transparence's CLI, "blockchain", "protocol","tellor".
+There is 4 arguments that can be used for Transparence's CLI, "blockchain", "protocol", "symbol" ,"tellor".
 TODO: add args description
 Here are some examples:
 - go run ./cmd/cli/main.go --blockchain binance --protocol pegged-tokens 
