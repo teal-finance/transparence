@@ -2,15 +2,19 @@ package bitcoin
 
 import (
 	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
+	"strings"
 
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/ybbus/jsonrpc/v2"
 )
 
 // BtcClient ...
@@ -235,6 +239,100 @@ func (c *BtcClient) ImportAddressRescan(address string, account string, rescan b
 	return c.RPC.ImportAddressRescanAsync(address, account, rescan)
 }
 
+//GetBalance of address , for multiple addresses, use  GetBalances
+func (c *BtcClient) GetBalance(addr string)(float64,error){
+
+	return c.GetBalances([]string{addr})
+}
+
+//GetBalances of all the  addresses in the array
+func (c *BtcClient) GetBalances(addresses []string)(float64,error){
+	defaultNet := &chaincfg.MainNetParams
+	arrayAddresses := []btcutil.Address{}
+
+	for _,addr:= range addresses{
+		addressDecoded, err := btcutil.DecodeAddress(addr, defaultNet)
+		if err != nil {
+			return 0.0,err
+		}
+		arrayAddresses = append(arrayAddresses,addressDecoded)
+	}
+
+	listUnspentOutputs,err:=c.RPC.ListUnspentMinMaxAddresses(1,999999,arrayAddresses)
+	if err != nil {
+		return 0.0,err
+	}
+	var  balance float64
+	for _,v:= range listUnspentOutputs{
+		balance+=v.Amount
+	}
+	return balance,nil
+}
+
+
+//AltRPC because btcd does not support all function from Bitcoin Core
+//and also I was not able to use btcd's RawRequest.
+type AltRPC struct  {
+	RPC jsonrpc.RPCClient
+
+}
+
+// NewAlt create an alternative rpc client to btcd RPC client
+func NewAlt(rpcURL, user, pass string) (*AltRPC, error) {
+	if !(strings.HasPrefix(rpcURL,"http://")){
+		rpcURL="http://"+rpcURL
+	}
+	client := jsonrpc.NewClientWithOpts(rpcURL, &jsonrpc.RPCClientOpts{
+   		CustomHeaders: map[string]string{
+   			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+pass)),
+   		},
+   	})
+		//dummy call to see an error early, if not we have to wait when the call is made
+	_, err := client.Call("getrpcinfo")
+	return &AltRPC{client},err
+}
+
+//GetAddressesByLabel return an array of the addresses of a label saved on the Bitcoin node
+// use ImportAddressRescan first with the node RPC
+func (a AltRPC) GetAddressesByLabel(label string) ([]string,error){
+	var listAddr []string
+	response, err := a.RPC.Call("getaddressesbylabel", label)
+	if err!=nil{
+		return listAddr,err
+	}
+	//type assertion because we know what to expect
+	var respmap map[string]interface{} = response.Result.(map[string]interface{})
+	for k:=range respmap{
+		listAddr=append(listAddr,k)
+	}
+	return listAddr,err
+
+}
+/*func (a AltRPC) GetBalance(address string) (float32,error){
+	return 0.0,nil
+}
+
+func (a AltRPC) GetBalanceByLabel(label string) (float32,error){
+	var balance float32
+
+	listAddr,err:=a.GetAddressesByLabel(label)
+	if  err!=nil{
+		return balance,err
+	}
+
+	for _,addr:= range listAddr{
+		b,err:=a.GetBalance(addr)
+		if  err!=nil{
+			return 0.0,err
+		}
+		balance+=b
+	}
+	return balance,err
+}
+
+*/
+
+//TODO getaddressinfo (note that we can only know more details, like required sig,  once it is used )
 /*
 // ExtractAddresses an array of the addresses present in the block. the index follow the tx indexes in the block
 func (c *BtcClient) ExtractAddresses(block int64) ([][]string, error) {

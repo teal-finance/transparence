@@ -1,15 +1,12 @@
 package main
 
 import (
-	"encoding/json"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"log"
 	"strings"
 	"transparence/pkg/blockchains/bitcoin"
-	"github.com/btcsuite/btcd/btcjson"
-	"github.com/ybbus/jsonrpc/v2"
+
 )
 
 //Tx test
@@ -48,24 +45,32 @@ func main() {
 
 	fmt.Println(futur)
 	fmt.Println(futur.Receive())*/
-	rpcClient := jsonrpc.NewClientWithOpts(*rpcURL, &jsonrpc.RPCClientOpts{
-   		CustomHeaders: map[string]string{
-   			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+pass)),
-   		},
-   	})
-    response, err := rpcClient.Call("listreceivedbylabel",0,true,true)//, 1, 2) // send with Authorization-Header
-		if erra != nil {
-			log.Fatal(erra, "bad listreceived")
+	rpcClient, _ := bitcoin.NewAlt(*rpcURL, user, pass)
 
-		}
-		fmt.Println(response)
-		fmt.Println(err)
+	addr, err := rpcClient.GetAddressesByLabel("binancebtc")
+	if err != nil {
+		log.Fatal("bad get addr by label", err)
+	}
+	fmt.Println(addr)
 
+	response, err := rpcClient.RPC.Call("listreceivedbylabel", 0, true, true) //, 1, 2) // send with Authorization-Header
+	if err != nil {
+		log.Fatal(err, "bad listreceived")
 
+	}
+	fmt.Println(response)
+	fmt.Println(err)
+
+	balance,err := client.GetBalance(BinanceBTC)
+ 	if err != nil {
+		log.Fatal("bad balance  ",err)
+	}
+
+	fmt.Println("Total Balance: ",balance)
 
 	addresses, err := client.ExtractAddressesFromTx(Tx)
 	if err != nil {
-		log.Fatal(err, " something somtheing wrong")
+		log.Fatal(err, " something  wrong")
 	}
 	fmt.Println("Adresses: \n", addresses)
 

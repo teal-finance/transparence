@@ -21,7 +21,7 @@ func main() {
 	)
 
 	rootCmd := &cobra.Command{
-		Short:         "Transparence command linde client",
+		Short:         "Transparence command line interface",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
