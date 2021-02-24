@@ -1,0 +1,7 @@
+rpc:
+- blockchain: bitcoin
+  link: "url"
+  userpass: "user:pass"
+- blockchain: ethereum
+  link: "some link"
+  userpass: "rpckey"

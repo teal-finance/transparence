@@ -5,6 +5,11 @@ import (
 	"math/rand"
 	"os"
 	"time"
+	"strings"
+
+	"transparence/pkg/configuration"
+	"transparence/pkg/blockchains/bitcoin"
+
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -16,14 +21,15 @@ func main() {
 		configFile string
 		protocol   string
 		address    []string
+		mode       string
 	)
 
 	rootCmd := &cobra.Command{
-		Short:         "Transparence command linde client",
+		Short:         "Transparence command line client",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var config configValue
+			var config configuration.ConfigValue
 
 			fmt.Println("READING CONFIGURATION")
 			viper.SetConfigFile(configFile)
@@ -34,10 +40,10 @@ func main() {
 				return fmt.Errorf("unable to decode configuration: %w", err)
 			}
 
-			fmt.Println("parsed flags", configFile, protocol, address)
-			fmt.Println("configuration", configFile)
+			fmt.Println("parsed flags", configFile, protocol, address, mode)
+			fmt.Println("configuration", config)
 
-			err := runCmd()
+			err := runCmd(config, protocol, address, mode)
 			if err != nil {
 				fmt.Println(color.RedString(err.Error()))
 			} else {
@@ -50,14 +56,30 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "configuration file")
 	rootCmd.PersistentFlags().StringVarP(&protocol, "protocol", "p", "", "protocol to explore ")
 	rootCmd.PersistentFlags().StringSliceVarP(&address, "address", "a", []string{}, "parameter for the function call")
+	rootCmd.PersistentFlags().StringVarP(&mode, "mode", "m", "cli", "server, cli")
+
 	check(rootCmd.MarkPersistentFlagRequired("config"))
 	check(rootCmd.MarkPersistentFlagRequired("protocol"))
-	check(rootCmd.MarkPersistentFlagRequired("address"))
-
+	//check(rootCmd.MarkPersistentFlagRequired("address"))
 	check(rootCmd.Execute())
 }
 
-func runCmd() error {
+func runCmd(config configuration.ConfigValue,protocol string, address []string, mode string) error {
+	if protocol=="bitcoin"{
+		rpc := config.RPC[0]
+		user := strings.Split(rpc.Userpass, ":")[0]
+		pass := strings.Split(rpc.Userpass, ":")[1]
+		client, err := bitcoin.New(rpc.Link, user, pass)
+		if err!=nil{
+			return err
+		}
+		balance,err := client.GetBalance(address[0])
+	 	if err != nil {
+			return err
+		}
+		fmt.Println(color.GreenString("Balance: ",balance))
+		return nil
+	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if r.Intn(3) == 0 {
 		return fmt.Errorf("error")
@@ -67,30 +89,7 @@ func runCmd() error {
 
 func check(err error) {
 	if err != nil {
-		fmt.Printf("%v : %v", color.RedString("error"), err)
+		fmt.Printf("%v : %v\n", color.RedString("error"), err)
 		os.Exit(0)
 	}
-}
-
-type configValue struct {
-	RPC         []RPC         `mapstructure:"rpc"`
-	Useraddress []UserAddress `mapstructure:"useraddress"`
-	Tokens      []Token       `mapstructure:"tokens"`
-}
-
-type RPC struct {
-	Blockchain string `mapstructure:"blockchain"`
-	Userpass   string `mapstructure:"userpass"`
-}
-
-type UserAddress struct {
-	Blockchain string `mapstructure:"blockchain"`
-	Address    string `mapstructure:"address"`
-}
-
-type Token struct {
-	BlockchainPlatform string   `mapstructure:"blockchain_platform"`
-	Symbol             string   `mapstructure:"symbol"`
-	ContractAddress    string   `mapstructure:"contract_address"`
-	BtcAddresses       []string `mapstructure:"btc_addresses"`
 }
