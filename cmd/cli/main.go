@@ -77,7 +77,8 @@ func runCmd(config configuration.ConfigValue,protocol string, address []string, 
 	 	if err != nil {
 			return err
 		}
-		fmt.Println(color.GreenString("Balance: ",balance))
+		fmt.Println(color.GreenString("Address: "),address[0])
+		fmt.Println(color.GreenString("Balance: "),balance)
 		return nil
 	}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
