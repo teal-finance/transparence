@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	transparenceutils "transparence/pkg/TransparenceUtils"
-	"transparence/pkg/cTokenAdapter"
+	"transparence/pkg/ethereum/erc20/compound"
 )
 
 const ETH_STRING = "Ethereum"
@@ -38,14 +38,14 @@ func main() {
 }
 
 func analyze(ipAddress string, comptrollerAddress string, platform string) {
-	client := cTokenAdapter.NewClientConnection(ipAddress)
+	client := compound.NewClientConnection(ipAddress)
 	tokenAddress := common.HexToAddress(comptrollerAddress)
-	instanceComptroller := cTokenAdapter.NewComptroller(tokenAddress, client)
-	platformTokenAddress := cTokenAdapter.GetCompAddress(instanceComptroller)
-	instance := cTokenAdapter.NewCrToken(platformTokenAddress, client)
-	displayProtocolToken(cTokenAdapter.GetName(instance), cTokenAdapter.GetSymbol(instance), platform)
+	instanceComptroller := compound.NewComptroller(tokenAddress, client)
+	platformTokenAddress := compound.GetCompAddress(instanceComptroller)
+	instance := compound.NewCrToken(platformTokenAddress, client)
+	displayProtocolToken(compound.GetName(instance), compound.GetSymbol(instance), platform)
 
-	markets := cTokenAdapter.GetAllMarkets(instanceComptroller)
+	markets := compound.GetAllMarkets(instanceComptroller)
 	for i := 1; i < len(markets); i++ {
 		_, isExcluded := transparenceutils.Find(EXCLUDED_ADDRESSES, markets[i].String())
 		if !isExcluded {
@@ -57,27 +57,27 @@ func analyze(ipAddress string, comptrollerAddress string, platform string) {
 func displayCompoundTokenInfos(address common.Address, client *ethclient.Client, platform string) {
 	var underlyingAddress common.Address
 
-	instance := cTokenAdapter.NewCrToken(address, client)
-	name := cTokenAdapter.GetName(instance)
-	symbol := cTokenAdapter.GetSymbol(instance)
-	decimals := cTokenAdapter.GetDecimals(instance)
-	totalSupply := cTokenAdapter.GetTotalSupply(instance)
-	totalBorrows := cTokenAdapter.GetTotalBorrows(instance)
-	totalReserve := cTokenAdapter.GetTotalReserves(instance)
-	cash := cTokenAdapter.GetCash(instance)
+	instance := compound.NewCrToken(address, client)
+	name := compound.GetName(instance)
+	symbol := compound.GetSymbol(instance)
+	decimals := compound.GetDecimals(instance)
+	totalSupply := compound.GetTotalSupply(instance)
+	totalBorrows := compound.GetTotalBorrows(instance)
+	totalReserve := compound.GetTotalReserves(instance)
+	cash := compound.GetCash(instance)
 
 	if (symbol == "crETH" && platform == "binance") || symbol == "cETH" {
 		underlyingAddress = common.HexToAddress(WETH_CONTRACT_ADDRESS)
 	} else if symbol == "crBNB" {
 		underlyingAddress = common.HexToAddress(WBNB_CONTRACT_ADDRESS)
 	} else {
-		underlyingAddress = cTokenAdapter.GetUnderlying(instance)
+		underlyingAddress = compound.GetUnderlying(instance)
 	}
 
-	underlyingInstance := cTokenAdapter.NewCrToken(underlyingAddress, client)
-	underlyingName := cTokenAdapter.GetName(underlyingInstance)
-	underlyingSymbol := cTokenAdapter.GetSymbol(underlyingInstance)
-	underlyingDecimals := cTokenAdapter.GetDecimals(underlyingInstance)
+	underlyingInstance := compound.NewCrToken(underlyingAddress, client)
+	underlyingName := compound.GetName(underlyingInstance)
+	underlyingSymbol := compound.GetSymbol(underlyingInstance)
+	underlyingDecimals := compound.GetDecimals(underlyingInstance)
 
 	fmt.Printf("\n ---------------------")
 	fmt.Printf("\n - cToken Address: %s | Name: %s | Symbol: (%s)", address, name, symbol)

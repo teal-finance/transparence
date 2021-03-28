@@ -1,4 +1,4 @@
-package cTokenAdapter
+package compound
 
 import (
 	"log"
@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"transparence/pkg/comptroller"
-	"transparence/pkg/crToken"
+	"transparence/pkg/ethereum/erc20/compound/controller"
+	"transparence/pkg/ethereum/erc20/creamfinance"
 )
 
 func NewClientConnection(ipAddress string) *ethclient.Client {
@@ -20,22 +20,22 @@ func NewClientConnection(ipAddress string) *ethclient.Client {
 	return client
 }
 
-func NewCrToken(tokenAddress common.Address, client *ethclient.Client) *crToken.CrToken {
-	tokenInstance, err := crToken.NewCrToken(tokenAddress, client)
+func NewCrToken(tokenAddress common.Address, client *ethclient.Client) *creamfinance.CrToken {
+	tokenInstance, err := creamfinance.NewCrToken(tokenAddress, client)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return tokenInstance
 }
 
-func NewComptroller(tokenAddress common.Address, client *ethclient.Client) *comptroller.Comptroller {
-	instance, err := comptroller.NewComptroller(tokenAddress, client)
+func NewComptroller(tokenAddress common.Address, client *ethclient.Client) *controller.Comptroller {
+	instance, err := controller.NewComptroller(tokenAddress, client)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return instance
 }
-func GetName(cTokenInstance *crToken.CrToken) string {
+func GetName(cTokenInstance *creamfinance.CrToken) string {
 	name, err := cTokenInstance.Name(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -43,7 +43,7 @@ func GetName(cTokenInstance *crToken.CrToken) string {
 	return name
 }
 
-func GetSymbol(cTokenInstance *crToken.CrToken) string {
+func GetSymbol(cTokenInstance *creamfinance.CrToken) string {
 	symbol, err := cTokenInstance.Symbol(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +51,7 @@ func GetSymbol(cTokenInstance *crToken.CrToken) string {
 	return symbol
 }
 
-func GetDecimals(cTokenInstance *crToken.CrToken) uint8 {
+func GetDecimals(cTokenInstance *creamfinance.CrToken) uint8 {
 	decimals, err := cTokenInstance.Decimals(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -59,7 +59,7 @@ func GetDecimals(cTokenInstance *crToken.CrToken) uint8 {
 	return decimals
 }
 
-func GetTotalSupply(cTokenInstance *crToken.CrToken) *big.Int {
+func GetTotalSupply(cTokenInstance *creamfinance.CrToken) *big.Int {
 	totalSupply, err := cTokenInstance.TotalSupply(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -67,7 +67,7 @@ func GetTotalSupply(cTokenInstance *crToken.CrToken) *big.Int {
 	return totalSupply
 }
 
-func GetBalanceOfToken(addressToQuery string, cTokenInstance *crToken.CrToken) *big.Int {
+func GetBalanceOfToken(addressToQuery string, cTokenInstance *creamfinance.CrToken) *big.Int {
 	address := common.HexToAddress(addressToQuery)
 	bal, err := cTokenInstance.BalanceOf(&bind.CallOpts{}, address)
 	if err != nil {
@@ -76,7 +76,7 @@ func GetBalanceOfToken(addressToQuery string, cTokenInstance *crToken.CrToken) *
 	return bal
 }
 
-func GetTotalBorrows(cTokenInstance *crToken.CrToken) *big.Int {
+func GetTotalBorrows(cTokenInstance *creamfinance.CrToken) *big.Int {
 	totalBorrows, err := cTokenInstance.TotalBorrows(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -84,7 +84,7 @@ func GetTotalBorrows(cTokenInstance *crToken.CrToken) *big.Int {
 	return totalBorrows
 }
 
-func GetTotalReserves(cTokenInstance *crToken.CrToken) *big.Int {
+func GetTotalReserves(cTokenInstance *creamfinance.CrToken) *big.Int {
 	totalReserves, err := cTokenInstance.TotalReserves(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -92,7 +92,7 @@ func GetTotalReserves(cTokenInstance *crToken.CrToken) *big.Int {
 	return totalReserves
 }
 
-func GetCash(cTokenInstance *crToken.CrToken) *big.Int {
+func GetCash(cTokenInstance *creamfinance.CrToken) *big.Int {
 	cash, err := cTokenInstance.GetCash(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -100,7 +100,7 @@ func GetCash(cTokenInstance *crToken.CrToken) *big.Int {
 	return cash
 }
 
-func GetUnderlying(cTokenInstance *crToken.CrToken) common.Address {
+func GetUnderlying(cTokenInstance *creamfinance.CrToken) common.Address {
 	underlyingAddress, err := cTokenInstance.Underlying(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -108,7 +108,7 @@ func GetUnderlying(cTokenInstance *crToken.CrToken) common.Address {
 	return underlyingAddress
 }
 
-func GetCompAddress(currentComptroller *comptroller.Comptroller) common.Address {
+func GetCompAddress(currentComptroller *controller.Comptroller) common.Address {
 	platformTokenAddress, err := currentComptroller.GetCompAddress(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -116,7 +116,7 @@ func GetCompAddress(currentComptroller *comptroller.Comptroller) common.Address 
 	return platformTokenAddress
 }
 
-func GetAllMarkets(currentComptroller *comptroller.Comptroller) []common.Address {
+func GetAllMarkets(currentComptroller *controller.Comptroller) []common.Address {
 	markets, err := currentComptroller.GetAllMarkets(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)

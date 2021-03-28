@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-
 	"fmt"
 	"math/big"
 
@@ -10,7 +9,7 @@ import (
 
 	transparenceutils "transparence/pkg/TransparenceUtils"
 	"transparence/pkg/coingecko"
-	"transparence/pkg/erc20adapter"
+	"transparence/pkg/ethereum/erc20"
 	"transparence/pkg/tellor/tellorCaller"
 )
 
@@ -56,15 +55,15 @@ func analyze(ipAddress string, blockchainPlatform string) *big.Float {
 	total := big.NewFloat(0)
 
 	tokens := transparenceutils.ReadConfigFile(CONFIG_FILE)
-	client := erc20adapter.NewClientConnection(ipAddress)
+	client := erc20.NewClientConnection(ipAddress)
 	for i := 0; i < len(tokens.PeggedTokens); i++ {
 		if tokens.PeggedTokens[i].BLOCKCHAIN_PLATFORM == blockchainPlatform {
 			tokenAddress := common.HexToAddress(tokens.PeggedTokens[i].CONTRACT_ADDRESS)
-			instance := erc20adapter.NewToken(tokenAddress, client)
-			name := erc20adapter.GetName(instance)
-			symbol := erc20adapter.GetSymbol(instance)
-			decimals := erc20adapter.GetDecimals(instance)
-			totalSupply := erc20adapter.GetTotalSupply(instance)
+			instance := erc20.NewToken(tokenAddress, client)
+			name := erc20.GetName(instance)
+			symbol := erc20.GetSymbol(instance)
+			decimals := erc20.GetDecimals(instance)
+			totalSupply := erc20.GetTotalSupply(instance)
 
 			// Parsing the total supply
 			ftotalSupply := transparenceutils.ParseDecimals(totalSupply, decimals)

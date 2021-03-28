@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	"transparence/pkg/erc20adapter"
+	"transparence/pkg/ethereum/erc20"
 )
 
 func Find(slice []string, val string) (int, bool) {
@@ -56,11 +56,11 @@ func Verif(supplyOnReserve *big.Float, supplyOnToken *big.Float) string {
 	}
 }
 
-func ReadConfigFile(configFile string) erc20adapter.PeggedTokens {
+func ReadConfigFile(configFile string) erc20.PeggedTokens {
 	file, _ := os.Open(configFile)
 	defer file.Close()
 	decoder := json.NewDecoder(file)
-	tokens := erc20adapter.PeggedTokens{}
+	tokens := erc20.PeggedTokens{}
 	err := decoder.Decode(&tokens)
 	if err != nil {
 		fmt.Println("error reading conf file :", err)
