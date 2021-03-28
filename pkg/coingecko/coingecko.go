@@ -3,7 +3,8 @@ package coingecko
 import (
 	"encoding/json"
 	"log"
-	transparenceutils "transparence/pkg/TransparenceUtils"
+
+	"transparence/pkg/http"
 )
 
 const IP_API_COINGECKO = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin"
@@ -22,10 +23,12 @@ type CoinsMarketItem struct {
 type CoinsMarket []CoinsMarketItem
 
 func QueryBitcoinInfosFromGecko() CoinsMarketItem {
-	body := transparenceutils.HttpRequest(IP_API_COINGECKO)
-	data := CoinsMarket{}
-	err := json.Unmarshal(body, &data)
+	body, err := http.Get(IP_API_COINGECKO)
 	if err != nil {
+		log.Fatal(err)
+	}
+	data := CoinsMarket{}
+	if err = json.Unmarshal(body, &data); err != nil {
 		log.Fatalln(err)
 	}
 

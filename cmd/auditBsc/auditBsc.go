@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 
-	transparenceutils "transparence/pkg/TransparenceUtils"
+	"transparence/pkg/config"
 	"transparence/pkg/ethereum/erc20"
+	"transparence/pkg/http"
+	"transparence/pkg/math"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -25,7 +28,10 @@ func auditBinanceTokens(ipAddress string) {
 	total := big.NewFloat(0)
 	var name, symbol string
 
-	tokens := transparenceutils.ReadConfigFile(CONFIG_FILE)
+	tokens, err := config.ReadConfigFile(CONFIG_FILE)
+	if err != nil {
+		log.Fatal(err)
+	}
 	client := erc20.NewClientConnection(ipAddress)
 
 	for i := 0; i < len(tokens.PeggedTokens); i++ {
@@ -48,7 +54,7 @@ func auditBinanceTokens(ipAddress string) {
 		fmt.Printf("- Binance Smart Chain reserve addresses : %s \n", tokens.PeggedTokens[i].BSC_PEGGED_ADDRESSES)
 
 		totalReserve := erc20.GetBalanceOfToken(tokens.PeggedTokens[i].RESERVE_ADDRESS, instance)
-		ftotalReserve := transparenceutils.ParseDecimals(totalReserve, decimals)
+		ftotalReserve := math.ParseDecimals(totalReserve, decimals)
 		total.Add(total, ftotalReserve)
 		executeAuditOnEth(tokens.PeggedTokens[i], ftotalReserve)
 	}
@@ -75,16 +81,19 @@ func executeAuditOnEth(tokenAudited erc20.PeggedToken, supplyOnEth *big.Float) {
 		instance := erc20.NewToken(tokenAddress, client)
 		decimals := erc20.GetDecimals(instance)
 		totalSupply := erc20.GetTotalSupply(instance)
-		ftotalSupply := transparenceutils.ParseDecimals(totalSupply, decimals)
+		ftotalSupply := math.ParseDecimals(totalSupply, decimals)
 		supplyOnBitcoin.Add(supplyOnBitcoin, ftotalSupply)
 	}
-	auditResult := transparenceutils.Verif(supplyOnEth, supplyOnBitcoin)
+	auditResult := math.Verif(supplyOnEth, supplyOnBitcoin)
 	fmt.Printf("- Reserve on Ethereum : %f \n- TotalSupply on BNC+BSC: %f\n---- Audit result : %s \n", supplyOnEth, supplyOnBitcoin, auditResult)
 }
 
 func getBinanceChainTokens() ([]erc20.BEP2Token, error) {
 	var tokens []erc20.BEP2Token
-	body := transparenceutils.HttpRequest(IP_API_BINANCECHAIN)
+	body, err := http.Get(IP_API_BINANCECHAIN)
+	if err != nil {
+		return nil, err
+	}
 	if err := json.Unmarshal(body, &tokens); err != nil {
 		return nil, err
 	}

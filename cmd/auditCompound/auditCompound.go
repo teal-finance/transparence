@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	transparenceutils "transparence/pkg/TransparenceUtils"
 	"transparence/pkg/ethereum/erc20/compound"
+	"transparence/pkg/math"
 )
 
 const ETH_STRING = "Ethereum"
@@ -47,7 +47,7 @@ func analyze(ipAddress string, comptrollerAddress string, platform string) {
 
 	markets := compound.GetAllMarkets(instanceComptroller)
 	for i := 1; i < len(markets); i++ {
-		_, isExcluded := transparenceutils.Find(EXCLUDED_ADDRESSES, markets[i].String())
+		_, isExcluded := findInSlice(EXCLUDED_ADDRESSES, markets[i].String())
 		if !isExcluded {
 			displayCompoundTokenInfos(markets[i], client, platform)
 		}
@@ -82,11 +82,20 @@ func displayCompoundTokenInfos(address common.Address, client *ethclient.Client,
 	fmt.Printf("\n ---------------------")
 	fmt.Printf("\n - cToken Address: %s | Name: %s | Symbol: (%s)", address, name, symbol)
 	fmt.Printf("\n - ERC20Token Address: %s | Name: %s | Symbol: (%s)", underlyingAddress, underlyingName, underlyingSymbol)
-	fmt.Printf("\n - Defi stats : TotalBorrows: %2.f %s | Reserve: %2.f ", transparenceutils.ParseDecimals(totalBorrows, decimals), symbol, transparenceutils.ParseDecimals(totalReserve, decimals))
-	fmt.Printf("\n - Capitalization : TotalSupply:%2.f %s | Cash:%2.f %s ", transparenceutils.ParseDecimals(totalSupply, decimals), symbol, transparenceutils.ParseDecimals(cash, underlyingDecimals), underlyingSymbol)
+	fmt.Printf("\n - Defi stats : TotalBorrows: %2.f %s | Reserve: %2.f ", math.ParseDecimals(totalBorrows, decimals), symbol, math.ParseDecimals(totalReserve, decimals))
+	fmt.Printf("\n - Capitalization : TotalSupply:%2.f %s | Cash:%2.f %s ", math.ParseDecimals(totalSupply, decimals), symbol, math.ParseDecimals(cash, underlyingDecimals), underlyingSymbol)
 	fmt.Printf("\n ---------------------\n")
 }
 
 func displayProtocolToken(platformName string, platformSymbol string, platform string) {
 	fmt.Printf("\n\n\n ==================| '%s' Protocol analysis | Symbol '%s' | Blockchain '%s' |==================\n", platformName, platformSymbol, platform)
+}
+
+func findInSlice(slice []string, val string) (int, bool) {
+	for i, item := range slice {
+		if item == val {
+			return i, true
+		}
+	}
+	return -1, false
 }
