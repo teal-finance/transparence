@@ -1,10 +1,8 @@
-package erc20adapter
+package erc20
 
 import (
 	"log"
 	"math/big"
-
-	"transparence/pkg/erc20token"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -45,15 +43,15 @@ func NewClientConnection(ipAddress string) *ethclient.Client {
 	return client
 }
 
-func NewToken(tokenAddress common.Address, client *ethclient.Client) *erc20token.Erc20token {
-	tokenInstance, err := erc20token.NewErc20token(tokenAddress, client)
+func NewToken(tokenAddress common.Address, client *ethclient.Client) *Erc20token {
+	tokenInstance, err := NewErc20token(tokenAddress, client)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return tokenInstance
 }
 
-func GetName(tokenERC20 *erc20token.Erc20token) string {
+func GetName(tokenERC20 *Erc20token) string {
 	name, err := tokenERC20.Name(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -61,7 +59,7 @@ func GetName(tokenERC20 *erc20token.Erc20token) string {
 	return name
 }
 
-func GetSymbol(tokenERC20 *erc20token.Erc20token) string {
+func GetSymbol(tokenERC20 *Erc20token) string {
 	symbol, err := tokenERC20.Symbol(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -69,7 +67,7 @@ func GetSymbol(tokenERC20 *erc20token.Erc20token) string {
 	return symbol
 }
 
-func GetDecimals(tokenERC20 *erc20token.Erc20token) uint8 {
+func GetDecimals(tokenERC20 *Erc20token) uint8 {
 	decimals, err := tokenERC20.Decimals(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -77,7 +75,7 @@ func GetDecimals(tokenERC20 *erc20token.Erc20token) uint8 {
 	return decimals
 }
 
-func GetTotalSupply(tokenERC20 *erc20token.Erc20token) *big.Int {
+func GetTotalSupply(tokenERC20 *Erc20token) *big.Int {
 	totalSupply, err := tokenERC20.TotalSupply(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -85,7 +83,7 @@ func GetTotalSupply(tokenERC20 *erc20token.Erc20token) *big.Int {
 	return totalSupply
 }
 
-func GetBalanceOfToken(addressToQuery string, tokenERC20 *erc20token.Erc20token) *big.Int {
+func GetBalanceOfToken(addressToQuery string, tokenERC20 *Erc20token) *big.Int {
 	address := common.HexToAddress(addressToQuery)
 	bal, err := tokenERC20.BalanceOf(&bind.CallOpts{}, address)
 	if err != nil {

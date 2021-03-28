@@ -1,0 +1,59 @@
+name: build
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-audit-BTC:
+    name: build-audit-BTC
+    runs-on: ubuntu-latest
+    steps:
+      - name: install go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: build audit-btc
+        run: go build -v -o auditBTC cmd/auditBTC/*.go
+
+  build-audit-BSC:
+    name: build-audit-BSC
+    runs-on: ubuntu-latest
+    steps:
+      - name: install go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: build audit-bsc
+        run: go build -v -o auditBSC cmd/auditBsc/*.go
+
+  build-audit-compound:
+    name: build-audit-Compound
+    runs-on: ubuntu-latest
+    steps:
+      - name: install go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: build audit-compound
+        run: go build -v -o auditBSC cmd/auditCompound/*.go
+
+  build-transparence:
+    name: build-transparence
+    runs-on: ubuntu-latest
+    steps:
+      - name: install go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.16
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: build transparence
+        run: go build -v -o transparence cmd/transparence/*.go
+

@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	transparenceutils "transparence/pkg/TransparenceUtils"
-	"transparence/pkg/cTokenAdapter"
+	"transparence/pkg/ethereum/erc20/compound"
+	"transparence/pkg/math"
 )
 
 const ETH_STRING = "Ethereum"
@@ -38,16 +38,16 @@ func main() {
 }
 
 func analyze(ipAddress string, comptrollerAddress string, platform string) {
-	client := cTokenAdapter.NewClientConnection(ipAddress)
+	client := compound.NewClientConnection(ipAddress)
 	tokenAddress := common.HexToAddress(comptrollerAddress)
-	instanceComptroller := cTokenAdapter.NewComptroller(tokenAddress, client)
-	platformTokenAddress := cTokenAdapter.GetCompAddress(instanceComptroller)
-	instance := cTokenAdapter.NewCrToken(platformTokenAddress, client)
-	displayProtocolToken(cTokenAdapter.GetName(instance), cTokenAdapter.GetSymbol(instance), platform)
+	instanceComptroller := compound.NewComptroller(tokenAddress, client)
+	platformTokenAddress := compound.GetCompAddress(instanceComptroller)
+	instance := compound.NewCrToken(platformTokenAddress, client)
+	displayProtocolToken(compound.GetName(instance), compound.GetSymbol(instance), platform)
 
-	markets := cTokenAdapter.GetAllMarkets(instanceComptroller)
+	markets := compound.GetAllMarkets(instanceComptroller)
 	for i := 1; i < len(markets); i++ {
-		_, isExcluded := transparenceutils.Find(EXCLUDED_ADDRESSES, markets[i].String())
+		_, isExcluded := findInSlice(EXCLUDED_ADDRESSES, markets[i].String())
 		if !isExcluded {
 			displayCompoundTokenInfos(markets[i], client, platform)
 		}
@@ -57,36 +57,45 @@ func analyze(ipAddress string, comptrollerAddress string, platform string) {
 func displayCompoundTokenInfos(address common.Address, client *ethclient.Client, platform string) {
 	var underlyingAddress common.Address
 
-	instance := cTokenAdapter.NewCrToken(address, client)
-	name := cTokenAdapter.GetName(instance)
-	symbol := cTokenAdapter.GetSymbol(instance)
-	decimals := cTokenAdapter.GetDecimals(instance)
-	totalSupply := cTokenAdapter.GetTotalSupply(instance)
-	totalBorrows := cTokenAdapter.GetTotalBorrows(instance)
-	totalReserve := cTokenAdapter.GetTotalReserves(instance)
-	cash := cTokenAdapter.GetCash(instance)
+	instance := compound.NewCrToken(address, client)
+	name := compound.GetName(instance)
+	symbol := compound.GetSymbol(instance)
+	decimals := compound.GetDecimals(instance)
+	totalSupply := compound.GetTotalSupply(instance)
+	totalBorrows := compound.GetTotalBorrows(instance)
+	totalReserve := compound.GetTotalReserves(instance)
+	cash := compound.GetCash(instance)
 
 	if (symbol == "crETH" && platform == "binance") || symbol == "cETH" {
 		underlyingAddress = common.HexToAddress(WETH_CONTRACT_ADDRESS)
 	} else if symbol == "crBNB" {
 		underlyingAddress = common.HexToAddress(WBNB_CONTRACT_ADDRESS)
 	} else {
-		underlyingAddress = cTokenAdapter.GetUnderlying(instance)
+		underlyingAddress = compound.GetUnderlying(instance)
 	}
 
-	underlyingInstance := cTokenAdapter.NewCrToken(underlyingAddress, client)
-	underlyingName := cTokenAdapter.GetName(underlyingInstance)
-	underlyingSymbol := cTokenAdapter.GetSymbol(underlyingInstance)
-	underlyingDecimals := cTokenAdapter.GetDecimals(underlyingInstance)
+	underlyingInstance := compound.NewCrToken(underlyingAddress, client)
+	underlyingName := compound.GetName(underlyingInstance)
+	underlyingSymbol := compound.GetSymbol(underlyingInstance)
+	underlyingDecimals := compound.GetDecimals(underlyingInstance)
 
 	fmt.Printf("\n ---------------------")
 	fmt.Printf("\n - cToken Address: %s | Name: %s | Symbol: (%s)", address, name, symbol)
 	fmt.Printf("\n - ERC20Token Address: %s | Name: %s | Symbol: (%s)", underlyingAddress, underlyingName, underlyingSymbol)
-	fmt.Printf("\n - Defi stats : TotalBorrows: %2.f %s | Reserve: %2.f ", transparenceutils.ParseDecimals(totalBorrows, decimals), symbol, transparenceutils.ParseDecimals(totalReserve, decimals))
-	fmt.Printf("\n - Capitalization : TotalSupply:%2.f %s | Cash:%2.f %s ", transparenceutils.ParseDecimals(totalSupply, decimals), symbol, transparenceutils.ParseDecimals(cash, underlyingDecimals), underlyingSymbol)
+	fmt.Printf("\n - Defi stats : TotalBorrows: %2.f %s | Reserve: %2.f ", math.ParseDecimals(totalBorrows, decimals), symbol, math.ParseDecimals(totalReserve, decimals))
+	fmt.Printf("\n - Capitalization : TotalSupply:%2.f %s | Cash:%2.f %s ", math.ParseDecimals(totalSupply, decimals), symbol, math.ParseDecimals(cash, underlyingDecimals), underlyingSymbol)
 	fmt.Printf("\n ---------------------\n")
 }
 
 func displayProtocolToken(platformName string, platformSymbol string, platform string) {
 	fmt.Printf("\n\n\n ==================| '%s' Protocol analysis | Symbol '%s' | Blockchain '%s' |==================\n", platformName, platformSymbol, platform)
+}
+
+func findInSlice(slice []string, val string) (int, bool) {
+	for i, item := range slice {
+		if item == val {
+			return i, true
+		}
+	}
+	return -1, false
 }

@@ -2,15 +2,16 @@ package main
 
 import (
 	"flag"
-
 	"fmt"
+	"log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	transparenceutils "transparence/pkg/TransparenceUtils"
 	"transparence/pkg/coingecko"
-	"transparence/pkg/erc20adapter"
+	"transparence/pkg/config"
+	"transparence/pkg/ethereum/erc20"
+	"transparence/pkg/math"
 	"transparence/pkg/tellor/tellorCaller"
 )
 
@@ -39,7 +40,7 @@ func main() {
 	tellorCaller.GetTellorPlaygroundValue(tellorRequestId)
 
 	btcPriceOnTellor := tellorCaller.GetTellorValue(TELLOR_ID_BTC_PRICE)
-	btcPriceOnTellorf := transparenceutils.ParseDecimals(btcPriceOnTellor, 6)
+	btcPriceOnTellorf := math.ParseDecimals(btcPriceOnTellor, 6)
 	btcOnEthUsdValue := new(big.Float)
 	btcOnEthUsdValue = btcOnEthUsdValue.Mul(totalOnEth, btcPriceOnTellorf)
 	fmt.Printf("\n According to Bitcoin's price on Tellor mainnet ($%2.f) that makes around $%2.f", btcPriceOnTellorf, btcOnEthUsdValue)
@@ -55,19 +56,22 @@ func main() {
 func analyze(ipAddress string, blockchainPlatform string) *big.Float {
 	total := big.NewFloat(0)
 
-	tokens := transparenceutils.ReadConfigFile(CONFIG_FILE)
-	client := erc20adapter.NewClientConnection(ipAddress)
+	tokens, err := config.ReadConfigFile(CONFIG_FILE)
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := erc20.NewClientConnection(ipAddress)
 	for i := 0; i < len(tokens.PeggedTokens); i++ {
 		if tokens.PeggedTokens[i].BLOCKCHAIN_PLATFORM == blockchainPlatform {
 			tokenAddress := common.HexToAddress(tokens.PeggedTokens[i].CONTRACT_ADDRESS)
-			instance := erc20adapter.NewToken(tokenAddress, client)
-			name := erc20adapter.GetName(instance)
-			symbol := erc20adapter.GetSymbol(instance)
-			decimals := erc20adapter.GetDecimals(instance)
-			totalSupply := erc20adapter.GetTotalSupply(instance)
+			instance := erc20.NewToken(tokenAddress, client)
+			name := erc20.GetName(instance)
+			symbol := erc20.GetSymbol(instance)
+			decimals := erc20.GetDecimals(instance)
+			totalSupply := erc20.GetTotalSupply(instance)
 
 			// Parsing the total supply
-			ftotalSupply := transparenceutils.ParseDecimals(totalSupply, decimals)
+			ftotalSupply := math.ParseDecimals(totalSupply, decimals)
 			// Add the circulating supply of the tokens to the total to compute ETH total btc tokens
 			total.Add(total, ftotalSupply)
 			// Store the result of the audit/the comparison between BTC supply and token supply
@@ -84,7 +88,7 @@ func printBitcoinComparison(total *big.Float, symbolToCompare string) {
 	ftotal, _ := total.Float64()
 	fmt.Printf("Circulating supply of BTC : %2.f BTC \n", btcInfos.CirculatingSupply)
 	fmt.Printf("Circulating supply of BTC on %s : %2.f BTC\n ", symbolToCompare, total)
-	fmt.Printf("================== Percentage of BTC on %s : %.2f %% ================== \n", symbolToCompare, transparenceutils.PercentOf(ftotal, btcInfos.CirculatingSupply))
+	fmt.Printf("================== Percentage of BTC on %s : %.2f %% ================== \n", symbolToCompare, math.Percent(ftotal, btcInfos.CirculatingSupply))
 }
 
 func displayTokenInfos(name string, symbol string, totalSupply *big.Float, address string, auditResult string) {
@@ -101,7 +105,7 @@ func executeAudit(btcAddresses []string, supplyOnToken *big.Float) string {
 	for i := 0; i < len(btcAddresses); i++ {
 		supplyOnReserve.Add(supplyOnReserve, getBalanceFromBitcoinAddress(btcAddresses[i]))
 	}
-	return transparenceutils.Verif(supplyOnReserve, supplyOnToken)
+	return math.Verif(supplyOnReserve, supplyOnToken)
 }
 
 func getBalanceFromBitcoinAddress(btcAddress string) *big.Float {
