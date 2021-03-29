@@ -1,4 +1,4 @@
-package tellorCaller
+package tellor
 
 import (
 	"context"
@@ -8,8 +8,6 @@ import (
 	"math/big"
 
 	"transparence/pkg/ethereum/erc20"
-	"transparence/pkg/tellor/UsingTellor"
-	"transparence/pkg/tellor/tellorPlayground"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -34,7 +32,7 @@ func UpdateTellorPlaygroundValue(value *big.Int, requestId *big.Int) {
 	}
 
 	contractAddress := common.HexToAddress(CONTRACT_ADDRESS_TELLOR_PLAYGROUND_RINKEBY)
-	playgroundInstance, err := tellorPlayground.NewTellorPlayground(contractAddress, client)
+	playgroundInstance, err := NewTellorPlayground(contractAddress, client)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,7 +77,7 @@ func UpdateTellorPlaygroundValue(value *big.Int, requestId *big.Int) {
 func GetTellorPlaygroundValue(requestId *big.Int) {
 	client := erc20.NewClientConnection(IP_API_INFURA_RINKEBY)
 	contractAddress := common.HexToAddress(CONTRACT_ADDRESS_TELLOR_PLAYGROUND_RINKEBY)
-	playgroundInstance, err := tellorPlayground.NewTellorPlayground(contractAddress, client)
+	playgroundInstance, err := NewTellorPlayground(contractAddress, client)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,7 +104,7 @@ func GetTellorPlaygroundValue(requestId *big.Int) {
 func GetTellorValue(requestId *big.Int) *big.Int {
 	client := erc20.NewClientConnection(IP_API_INFURA_MAINNET)
 	contractAddress := common.HexToAddress(CONTRACT_ADDRESS_USING_TELLOR_MAINNET)
-	usingTellorInstance, err := UsingTellor.NewUsingTellor(contractAddress, client)
+	usingTellorInstance, err := NewUsingTellor(contractAddress, client)
 	result, err := usingTellorInstance.GetCurrentValue(&bind.CallOpts{}, requestId)
 	if err != nil {
 		log.Fatal(err)

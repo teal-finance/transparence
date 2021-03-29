@@ -12,7 +12,7 @@ import (
 	"transparence/pkg/config"
 	"transparence/pkg/ethereum/erc20"
 	"transparence/pkg/math"
-	"transparence/pkg/tellor/tellorCaller"
+	"transparence/pkg/tellor"
 )
 
 const CONFIG_FILE = "config.json"
@@ -36,10 +36,10 @@ func main() {
 	tellorRequestId := big.NewInt(50)
 	totalOnEthInt := new(big.Int)
 	totalOnEthInt.SetString(totalOnEth.String(), 10)
-	tellorCaller.UpdateTellorPlaygroundValue(totalOnEthInt, tellorRequestId)
-	tellorCaller.GetTellorPlaygroundValue(tellorRequestId)
+	tellor.UpdateTellorPlaygroundValue(totalOnEthInt, tellorRequestId)
+	tellor.GetTellorPlaygroundValue(tellorRequestId)
 
-	btcPriceOnTellor := tellorCaller.GetTellorValue(TELLOR_ID_BTC_PRICE)
+	btcPriceOnTellor := tellor.GetTellorValue(TELLOR_ID_BTC_PRICE)
 	btcPriceOnTellorf := math.ParseDecimals(btcPriceOnTellor, 6)
 	btcOnEthUsdValue := new(big.Float)
 	btcOnEthUsdValue = btcOnEthUsdValue.Mul(totalOnEth, btcPriceOnTellorf)
