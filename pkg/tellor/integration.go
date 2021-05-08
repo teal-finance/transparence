@@ -1,15 +1,12 @@
-package tellorCaller
+package tellor
 
 import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"log"
 	"math/big"
 
 	"transparence/pkg/ethereum/erc20"
-	"transparence/pkg/tellor/UsingTellor"
-	"transparence/pkg/tellor/tellorPlayground"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -27,39 +24,39 @@ const IP_API_INFURA_MAINNET = "https://mainnet.infura.io/v3/" + INFURA_KEY_MAINN
 
 const ETH_PRIVATE_KEY = ""
 
-func UpdateTellorPlaygroundValue(value *big.Int, requestId *big.Int) {
+func UpdateTellorPlaygroundValue(value *big.Int, requestId *big.Int) error {
 	client, err := ethclient.Dial(IP_API_INFURA_RINKEBY)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	contractAddress := common.HexToAddress(CONTRACT_ADDRESS_TELLOR_PLAYGROUND_RINKEBY)
-	playgroundInstance, err := tellorPlayground.NewTellorPlayground(contractAddress, client)
+	playgroundInstance, err := NewTellorPlayground(contractAddress, client)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	privateKey, err := crypto.HexToECDSA(ETH_PRIVATE_KEY)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Fatal("error casting public key to ECDSA")
+		return fmt.Errorf("casting public key to ECDSA : %w", err)
 	}
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
 	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	auth := bind.NewKeyedTransactor(privateKey)
@@ -70,46 +67,47 @@ func UpdateTellorPlaygroundValue(value *big.Int, requestId *big.Int) {
 
 	tx, err := playgroundInstance.SubmitValue(auth, requestId, value)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	fmt.Printf(" Transaction to Tellor's contract sent, txhash = %s", tx.Hash().Hex())
-	fmt.Print("\n")
+	fmt.Printf(" Transaction to Tellor's contract sent, txhash = %s\n", tx.Hash().Hex())
+	return nil
 }
 
-func GetTellorPlaygroundValue(requestId *big.Int) {
+func GetTellorPlaygroundValue(requestId *big.Int) error {
 	client := erc20.NewClientConnection(IP_API_INFURA_RINKEBY)
 	contractAddress := common.HexToAddress(CONTRACT_ADDRESS_TELLOR_PLAYGROUND_RINKEBY)
-	playgroundInstance, err := tellorPlayground.NewTellorPlayground(contractAddress, client)
+	playgroundInstance, err := NewTellorPlayground(contractAddress, client)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	lastIndex, err := playgroundInstance.GetNewValueCountbyRequestId(&bind.CallOpts{}, requestId)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	lastIndex.Sub(lastIndex, big.NewInt(1))
 	timestamp, err := playgroundInstance.GetTimestampbyRequestIDandIndex(&bind.CallOpts{}, requestId, lastIndex)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	result, err := playgroundInstance.RetrieveData(&bind.CallOpts{}, requestId, timestamp)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Println(" Data stored in Tellor's contract = ", result)
+	return nil
 }
 
-func GetTellorValue(requestId *big.Int) *big.Int {
+func GetTellorValue(requestId *big.Int) (*big.Int, error) {
 	client := erc20.NewClientConnection(IP_API_INFURA_MAINNET)
 	contractAddress := common.HexToAddress(CONTRACT_ADDRESS_USING_TELLOR_MAINNET)
-	usingTellorInstance, err := UsingTellor.NewUsingTellor(contractAddress, client)
+	usingTellorInstance, err := NewUsingTellor(contractAddress, client)
 	result, err := usingTellorInstance.GetCurrentValue(&bind.CallOpts{}, requestId)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return result.Value
+	return result.Value, nil
 }
