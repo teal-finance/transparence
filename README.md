@@ -3,8 +3,9 @@
 *Transparence, French word for transparency.*
 
 This started during the [ETHOnline Hackathon](https://ethonline.org/) to improve transparency in cryptocurrencies.
+We got a sponsor prize and [The hackathon showcase](https://showcase.ethglobal.co/ethonline/transparence) shows the earliest ideas.
 
-We improve on this work for the [Encode Club Hackathon](https://hack.encode.club/).
+We improve on this work for the [Encode Club Hackathon](https://hack.encode.club/), in which we reached the [Final and had a sponsor prize](https://medium.com/encode-club/encode-hack-club-summary-and-prizewinners-5324b4a53e35).
 
 # Description
 
